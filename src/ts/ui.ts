@@ -100,6 +100,7 @@ export default class UI {
                 {
                     onclick: (e: MouseEvent) => {
                         e.stopPropagation();
+                        // eslint-disable-next-line always-return
                         onFavorite(recording.videoId).then((fav) => {
                             if (fav !== null) {
                                 favoriteBtn.innerHTML = fav ? "★" : "☆";

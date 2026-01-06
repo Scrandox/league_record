@@ -63,7 +63,7 @@ impl AppManager for AppHandle {
             // if we successfully read and parsed the version, we compare it to the version of this binary
             // if the version is smaller the app was just updated => show dialog
             Ok(Ok(version)) => {
-                if version < Version::parse(CURRENT_VERSION)? {
+                if version != Version::parse(CURRENT_VERSION)? {
                     self.dialog()
                         .message(format!("Successfully installed {APP_NAME} v{CURRENT_VERSION}"))
                         .title(format!("{APP_NAME} update successful!"))

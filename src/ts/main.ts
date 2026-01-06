@@ -46,7 +46,7 @@ const player = videojs("video_player", VIDEO_JS_OPTIONS) as Player & {
 
 console.log(MarkersPlugin);
 
-void main();
+await main();
 async function main() {
     // disable right click menu
     addEventListener("contextmenu", (event) => event.preventDefault());
@@ -333,6 +333,7 @@ async function renameVideo(videoId: string, newVideoId: string) {
 }
 
 function showDeleteModal(videoId: string) {
+    // eslint-disable-next-line always-return
     commands.confirmDelete().then((confirmDelete) => {
         if (confirmDelete) {
             ui.showDeleteModal(videoId, deleteVideo);
@@ -374,7 +375,7 @@ function showTimestamps() {
     }
 
     ui.showTimelineModal(
-        timelineEvents.sort((a, b) => a.timestamp - b.timestamp),
+        timelineEvents.toSorted((a, b) => a.timestamp - b.timestamp),
         (secs) => player.currentTime(secs / 1000 - EVENT_DELAY),
     );
 }
@@ -410,12 +411,15 @@ function handleKeyboardEvents(event: KeyboardEvent) {
         switch (event.key) {
             case " ":
             case "Enter":
+                // eslint-disable-next-line no-unused-expressions
                 player.paused() ? player.play() : player.pause();
                 break;
             case "ArrowRight":
+                // eslint-disable-next-line no-unused-expressions
                 event.shiftKey ? player.markers().next() : player.currentTime(player.currentTime()! + 5);
                 break;
             case "ArrowLeft":
+                // eslint-disable-next-line no-unused-expressions
                 event.shiftKey ? player.markers().prev() : player.currentTime(player.currentTime()! - 5);
                 break;
             case "ArrowUp":
@@ -428,6 +432,7 @@ function handleKeyboardEvents(event: KeyboardEvent) {
             case "F":
                 // this only makes the videojs player fill the whole window
                 // the listener for the 'fullscreenchange' event handles keeping the tauri window fullscreen status in sync
+                // eslint-disable-next-line no-unused-expressions
                 player.isFullscreen() ? player.exitFullscreen() : player.requestFullscreen();
                 break;
             case "m":
