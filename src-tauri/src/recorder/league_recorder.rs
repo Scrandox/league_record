@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+use serde::Deserialize;
 use shaco::rest::LcuRestClient;
 use tauri::async_runtime::{self, JoinHandle, Mutex};
 use tauri::AppHandle;
@@ -15,7 +16,7 @@ pub struct LeagueRecorder {
 }
 
 impl LeagueRecorder {
-    const PLATFORM_ID: &'static str = "/lol-platform-config/v1/namespaces/LoginDataPacket/platformId";
+    const PLATFORM_ID: &'static str = "/lol-chat/v1/me";
 
     pub fn new(app_handle: AppHandle) -> Self {
         let cancel_token = CancellationToken::new();
@@ -30,7 +31,15 @@ impl LeagueRecorder {
                     if let Ok(credentials) = riot_local_auth::lcu::try_get_credentials() {
                         let lcu_rest_client = LcuRestClient::from(&credentials);
 
-                        if let Ok(platform_id) = lcu_rest_client.get::<String>(Self::PLATFORM_ID).await {
+                        #[derive(Debug, Deserialize)]
+                        #[serde(rename_all = "camelCase")]
+                        struct PlatformIdContainer {
+                            platform_id: String,
+                        }
+
+                        if let Ok(PlatformIdContainer { platform_id }) =
+                            lcu_rest_client.get::<PlatformIdContainer>(Self::PLATFORM_ID).await
+                        {
                             let ctx = ApiCtx {
                                 app_handle: app_handle.clone(),
                                 credentials,
