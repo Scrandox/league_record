@@ -78,7 +78,6 @@ export default class UI {
     private readonly checkboxStructure;
     private readonly checkboxDragon;
     private readonly checkboxHerald;
-    private readonly checkboxAtakhan;
     private readonly checkboxBaron;
 
     private readonly showTimestampsButton;
@@ -90,6 +89,9 @@ export default class UI {
     private filterTab: FilterTab = "all";
     private viewMode: ViewMode = "list";
     private activeVideoId: string | null = null;
+
+    // resolves a videoId to a playable URL for grid thumbnails (set once main.ts knows the recordings path)
+    private thumbnailSrc: ((videoId: string) => string) | null = null;
 
     private onVideo: (videoId: string) => void = () => {};
     private onFavorite: (videoId: string) => Promise<boolean | null> = () => Promise.resolve(null);
@@ -120,7 +122,6 @@ export default class UI {
         this.checkboxStructure = document.querySelector<HTMLInputElement>("#structure")!;
         this.checkboxDragon = document.querySelector<HTMLInputElement>("#dragon")!;
         this.checkboxHerald = document.querySelector<HTMLInputElement>("#herald")!;
-        this.checkboxAtakhan = document.querySelector<HTMLInputElement>("#atakhan")!;
         this.checkboxBaron = document.querySelector<HTMLInputElement>("#baron")!;
 
         this.showTimestampsButton = document.querySelector<HTMLButtonElement>("#copy-timestamps-btn")!;
@@ -160,12 +161,16 @@ export default class UI {
         this.checkboxStructure.addEventListener("click", handler);
         this.checkboxDragon.addEventListener("click", handler);
         this.checkboxHerald.addEventListener("click", handler);
-        this.checkboxAtakhan.addEventListener("click", handler);
         this.checkboxBaron.addEventListener("click", handler);
     };
 
     public setShowTimestampsOnClickHandler = (handler: (e: MouseEvent) => void) => {
         this.showTimestampsButton.addEventListener("click", handler);
+    };
+
+    public setThumbnailSrcResolver = (resolver: (videoId: string) => string) => {
+        this.thumbnailSrc = resolver;
+        this.render();
     };
 
     // --- recordings list / grid ---
@@ -305,6 +310,11 @@ export default class UI {
         const kda = kdaOf(recording.metadata);
 
         const thumb = el("div", { class: "lr-card__thumb" }, [
+            // a muted video with a media fragment renders the frame at that time - no
+            // separate thumbnail files needed; 90s in is past the loading screen
+            ...(this.thumbnailSrc !== null
+                ? [el("video", { src: `${this.thumbnailSrc(recording.videoId)}#t=90`, preload: "metadata", muted: "", tabindex: "-1" })]
+                : []),
             el("span", { class: "lr-card__badge", "data-result": result }, [result === "-" ? DASH : result]),
             ...(isFavorite(recording.metadata) ? [el("span", { class: "lr-card__fav" }, [STAR])] : []),
         ]);
@@ -380,7 +390,14 @@ export default class UI {
             push(data.summonerSpells.map((s) => s.toUpperCase()).join("+"));
         }
         if (data.runes) {
-            push(`${data.runes.primaryStyle.toUpperCase()}/${data.runes.subStyle.toUpperCase()}`);
+            // keystone inline, full rune page in the tooltip
+            const keystone = data.runes.perks[0];
+            const runesText =
+                keystone !== undefined
+                    ? `${keystone.toUpperCase()} (${data.runes.primaryStyle.toUpperCase()}/${data.runes.subStyle.toUpperCase()})`
+                    : `${data.runes.primaryStyle.toUpperCase()}/${data.runes.subStyle.toUpperCase()}`;
+            const runesTitle = `Runes: ${data.runes.perks.join(", ")} (${data.runes.primaryStyle}/${data.runes.subStyle})`;
+            push(el("span", { title: runesTitle }, [runesText]));
         }
         push(el("span", { class: "em" }, [`${stats.kills}/${stats.deaths}/${stats.assists}`]));
         push(`${stats.totalMinionsKilled} CS`);
@@ -589,7 +606,6 @@ export default class UI {
         this.checkboxStructure.checked = settings.structure;
         this.checkboxDragon.checked = settings.dragon;
         this.checkboxHerald.checked = settings.herald;
-        this.checkboxAtakhan.checked = settings.atakhan;
         this.checkboxBaron.checked = settings.baron;
     };
 
@@ -601,7 +617,6 @@ export default class UI {
             structure: this.checkboxStructure.checked,
             dragon: this.checkboxDragon.checked,
             herald: this.checkboxHerald.checked,
-            atakhan: this.checkboxAtakhan.checked,
             baron: this.checkboxBaron.checked,
         };
     };

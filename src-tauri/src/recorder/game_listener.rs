@@ -200,6 +200,7 @@ impl GameListener {
                             match_id,
                             output_filepath,
                             ingame_time_rec_start_offset,
+                            live_enemy_champion,
                         } = metadata;
 
                         let mut metadata_filepath = output_filepath.clone();
@@ -209,6 +210,7 @@ impl GameListener {
                         match metadata::process_data_with_retry(
                             ingame_time_rec_start_offset,
                             match_id,
+                            live_enemy_champion,
                             &ctx.credentials,
                             &ctx.cancel_token,
                         )

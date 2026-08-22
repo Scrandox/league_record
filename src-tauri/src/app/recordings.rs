@@ -196,7 +196,13 @@ pub mod action {
                 metadata.favorite = favorite;
                 metadata.highlights = highlights;
                 let metadata_file = MetadataFile::Metadata(metadata);
-                if let Err(e) = save_recording_metadata(&metadata_path, &metadata_file) {
+                // the recording may have been auto-renamed while we were fetching -
+                // saving to the old path would leave an orphaned json file behind
+                let mut video_path = metadata_path.clone();
+                video_path.set_extension("mp4");
+                if !video_path.is_file() {
+                    log::info!("recording was renamed/deleted during metadata fetch - not saving to old path");
+                } else if let Err(e) = save_recording_metadata(&metadata_path, &metadata_file) {
                     log::error!("failed to save re-processed game metadata: {e}");
                 }
                 Ok(metadata_file)

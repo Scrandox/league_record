@@ -32,6 +32,7 @@ pub struct Metadata {
     pub match_id: MatchId,
     pub output_filepath: PathBuf,
     pub ingame_time_rec_start_offset: f64,
+    pub live_enemy_champion: Option<String>,
 }
 
 impl Display for Metadata {
@@ -137,13 +138,57 @@ impl RecordingTask {
             log::info!("failed to save MetadataFile: {e}")
         }
 
+        let live_enemy_champion = Self::detect_lane_opponent(&ingame_client, &ctx.cancel_token).await;
+        log::info!("live lane opponent: {live_enemy_champion:?}");
+
         let metadata = Metadata {
             match_id: ctx.match_id,
             output_filepath,
             ingame_time_rec_start_offset,
+            live_enemy_champion,
         };
 
         Ok((recorder, metadata))
+    }
+
+    /// find the enemy champion in the same position via the live game API
+    /// its position data comes from the actual assigned roles, unlike the match-history
+    /// timeline which guesses lanes from play patterns (and often gets it wrong)
+    async fn detect_lane_opponent(ingame_client: &IngameClient, cancel_token: &CancellationToken) -> Option<String> {
+        for attempt in 0..5u32 {
+            if attempt > 0 {
+                let cancelled = cancellable!(sleep(Duration::from_secs(2)), cancel_token, ());
+                if cancelled {
+                    return None;
+                }
+            }
+
+            let Ok(active_name) = ingame_client.active_player_name().await else { continue };
+            let Ok(players) = ingame_client.player_list(None).await else { continue };
+
+            let Some(me) = players
+                .iter()
+                .find(|p| p.riot_id.riot_id == active_name || p.summoner_name == active_name)
+            else {
+                continue;
+            };
+
+            // in customs / blind pick everyone reports NONE - no positions to match on
+            let my_position = me.position.to_string();
+            if my_position == "NONE" || my_position == "UNKNOWN" {
+                return None;
+            }
+
+            let my_team = me.team.to_string();
+            let enemy = players
+                .iter()
+                .find(|p| p.team.to_string() != my_team && p.position.to_string() == my_position);
+            if let Some(enemy) = enemy {
+                return Some(enemy.champion_name.clone());
+            }
+        }
+
+        None
     }
 
     async fn setup_recorder(ctx: &GameCtx) -> Result<(Recorder, PathBuf)> {

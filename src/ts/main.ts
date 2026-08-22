@@ -141,6 +141,9 @@ async function main() {
     // load data
     commands.getMarkerFlags().then(ui.setMarkerFlags);
 
+    const recordingsPath = await commands.getRecordingsPath();
+    ui.setThumbnailSrcResolver((videoId) => convertFileSrc(recordingsPath + sep() + videoId));
+
     const videoIds = await updateSidebar();
     const firstVideo = videoIds[0];
     if (firstVideo) {
@@ -330,7 +333,9 @@ function eventName(gameEvent: GameEvent, participantId: number, checkbox: Marker
         if ((checkbox?.herald ?? true) && monsterType.monsterType === "RIFTHERALD") {
             return "Herald";
         }
-        if ((checkbox?.atakhan ?? true) && monsterType.monsterType === "ATAKHAN") {
+        // Atakhan was removed from the game; recordings from past seasons still
+        // contain his events, so keep showing them (there is no toggle any more)
+        if (monsterType.monsterType === "ATAKHAN") {
             return "Atakhan";
         }
         if ((checkbox?.baron ?? true) && monsterType.monsterType === "BARON_NASHOR") {

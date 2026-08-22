@@ -87,12 +87,16 @@ Event markers — these are the app's signature and must stay stable across feat
 | Structure | `--m-structure` | `#4F7CF7` |
 | Dragon | `--m-dragon` | `#D8A13A` |
 | Herald | `--m-herald` | `#D24FD2` |
-| Atakhan | `--m-atakhan` | `#A12A2A` |
+| Atakhan (legacy) | `--m-atakhan` | `#A12A2A` |
 | Baron | `--m-baron` | `#8A5CF0` |
 | Highlight | `--m-highlight` | `#3FBFB4` |
 
 A new event type needs a new token here, distinguishable from all eight above, plus a legend
 entry and a scrubber marker. Do not reuse an existing color for a new event.
+
+Atakhan was removed from League; the token stays because recordings from past seasons still
+contain his events (they render on the scrubber and in the timestamps dialog, but the event
+has no legend toggle any more). Retired events keep their token for the same reason.
 
 ## Type
 

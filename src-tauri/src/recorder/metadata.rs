@@ -28,6 +28,7 @@ pub async fn process_data(ingame_time_rec_start_offset: f64, match_id: MatchId) 
         &lcu_rest_client,
         ingame_time_rec_start_offset,
         match_id,
+        None,
         player,
         game,
         timeline,
@@ -38,6 +39,7 @@ pub async fn process_data(ingame_time_rec_start_offset: f64, match_id: MatchId) 
 pub async fn process_data_with_retry(
     ingame_time_rec_start_offset: f64,
     match_id: MatchId,
+    live_enemy_champion: Option<String>,
     credentials: &Credentials,
     cancel_token: &CancellationToken,
 ) -> Result<GameMetadata> {
@@ -74,6 +76,7 @@ pub async fn process_data_with_retry(
         &lcu_rest_client,
         ingame_time_rec_start_offset,
         match_id,
+        live_enemy_champion,
         player,
         game,
         timeline,
@@ -81,10 +84,12 @@ pub async fn process_data_with_retry(
     .await
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn build_metadata(
     lcu_rest_client: &LcuRestClient,
     ingame_time_rec_start_offset: f64,
     match_id: MatchId,
+    live_enemy_champion: Option<String>,
     player: Player,
     game: Game,
     timeline: Timeline,
@@ -124,15 +129,20 @@ async fn build_metadata(
     let champion_name = resolve_champion_name(lcu_rest_client, summoner_id, participant.champion_id).await?;
 
     // best-effort extras - never fail metadata collection because of them
-    let enemy_champion_name = match find_lane_opponent(&game.participants, participant) {
-        Some(enemy) => match resolve_champion_name(lcu_rest_client, summoner_id, enemy.champion_id).await {
-            Ok(name) => Some(name),
-            Err(e) => {
-                log::warn!("failed to resolve enemy champion name: {e}");
-                None
-            }
+    // the live game API position data is authoritative; the match-history timeline
+    // lane guess is only a fallback (e.g. when the app started mid-game)
+    let enemy_champion_name = match live_enemy_champion {
+        Some(name) => Some(name),
+        None => match find_lane_opponent(&game.participants, participant) {
+            Some(enemy) => match resolve_champion_name(lcu_rest_client, summoner_id, enemy.champion_id).await {
+                Ok(name) => Some(name),
+                Err(e) => {
+                    log::warn!("failed to resolve enemy champion name: {e}");
+                    None
+                }
+            },
+            None => None,
         },
-        None => None,
     };
     let summoner_spells = summoner_spell_names(lcu_rest_client, participant)
         .await
