@@ -45,7 +45,7 @@ authors = { workspace = true }
 license = { workspace = true }
 
 [dependencies]
-tauri = { version = "2.6.2", features = ["protocol-asset", "tray-icon"] }
+tauri = { version = "2.6.2", features = ["protocol-asset", "tray-icon", "image-png"] }
 tauri-plugin-updater = "2.9.0"
 tauri-plugin-autostart = "2.5.0"
 tauri-plugin-single-instance = "2.3.0"

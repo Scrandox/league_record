@@ -50,8 +50,16 @@ fn handle_system_tray_menu_event(app_handle: &AppHandle, event: MenuEvent) {
 
 impl SystemTrayManager for AppHandle {
     fn init_tray_menu(&self) {
+        // single-color mark reads better at tray size than the full app icon;
+        // macOS gets the black variant as a template image so the OS can invert it
+        #[cfg(not(target_os = "macos"))]
+        let tray_icon = tauri::image::Image::from_bytes(include_bytes!("../../icons/tray-white-32.png")).unwrap();
+        #[cfg(target_os = "macos")]
+        let tray_icon = tauri::image::Image::from_bytes(include_bytes!("../../icons/tray-black-32.png")).unwrap();
+
         TrayIconBuilder::with_id(constants::TRAY_ID)
-            .icon(self.default_window_icon().unwrap().clone())
+            .icon(tray_icon)
+            .icon_as_template(cfg!(target_os = "macos"))
             .title(constants::APP_NAME)
             .tooltip(constants::APP_NAME)
             .on_tray_icon_event(handle_system_tray_event)
