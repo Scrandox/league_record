@@ -20,7 +20,7 @@ export type Deferred = { favorite: boolean; matchId: MatchId; ingameTimeRecStart
 export type DragonType = "FIRE_DRAGON" | "EARTH_DRAGON" | "WATER_DRAGON" | "AIR_DRAGON" | "HEXTECH_DRAGON" | "CHEMTECH_DRAGON" | "ELDER_DRAGON"
 export type Framerate = [number, number]
 export type GameEvent = ({ ChampionKill: { victim_id: number; killer_id: number; assisting_participant_ids: number[]; position: Position } } | { BuildingKill: { team_id: Team; killer_id: number; building_type: BuildingType; assisting_participant_ids: number[] } } | { EliteMonsterKill: { killer_id: number; monster_type: MonsterType; assisting_participant_ids: number[] } }) & { timestamp: number }
-export type GameMetadata = { favorite: boolean; matchId: MatchId; ingameTimeRecStartOffset: number; highlights?: number[]; queue: Queue; player: Player; championName: string; stats: Stats; participantId: number; events: GameEvent[] }
+export type GameMetadata = { favorite: boolean; matchId: MatchId; ingameTimeRecStartOffset: number; highlights?: number[]; queue: Queue; player: Player; championName: string; enemyChampionName?: string | null; summonerSpells?: string[]; runes?: Runes; stats: Stats; participantId: number; events: GameEvent[] }
 export type LaneType = "TOP_LANE" | "MID_LANE" | "BOT_LANE"
 export type MarkerFlags = { kill: boolean; death: boolean; assist: boolean; structure: boolean; dragon: boolean; herald: boolean; atakhan: boolean; baron: boolean }
 export type MatchId = { gameId: number; platformId: string }
@@ -30,6 +30,7 @@ export type NoData = { favorite: boolean }
 export type Player = { gameName: string; tagLine: string; summonerId?: number | null }
 export type Position = { x: number; y: number }
 export type Queue = { id: number; name: string; isRanked: boolean }
+export type Runes = { primaryStyle: string; subStyle: string; perks: string[] }
 export type Settings = { markerFlags: MarkerFlags; checkForUpdates: boolean; debugLog: boolean; recordingsFolder: string; filenameFormat: string; encodingQuality: number; outputResolution: StdResolution | null; framerate: Framerate; recordAudio: AudioSource; onlyRecordRanked: boolean; autostart: boolean; maxRecordingAgeDays: number | null; maxRecordingsSizeGb: number | null; confirmDelete: boolean; hightlightHotkey: string | null }
 export type Stats = { kills: number; deaths: number; assists: number; largestMultiKill: number; neutralMinionsKilled: number; neutralMinionsKilledEnemyJungle: number; neutralMinionsKilledTeamJungle: number; totalMinionsKilled: number; visionScore: number; visionWardsBoughtInGame: number; wardsPlaced: number; wardsKilled: number; 
 /**
@@ -37,7 +38,7 @@ export type Stats = { kills: number; deaths: number; assists: number; largestMul
  * if this field is true `win` has to be ignored because the team that had to remake counts as the loser of the game
  * surrenders pre minute 20 count as a normal surrender (field `game_ended_in_surrender`)
  */
-gameEndedInEarlySurrender: boolean; gameEndedInSurrender: boolean; win: boolean }
+gameEndedInEarlySurrender: boolean; gameEndedInSurrender: boolean; win: boolean; perkPrimaryStyle?: number; perkSubStyle?: number; perk0?: number; perk1?: number; perk2?: number; perk3?: number; perk4?: number; perk5?: number }
 /**
  * most common resolutions for the aspect ratios 4:3, 5:4, 16:9, 16:10, 21:9, 43:18, 24:10, 32:9, 32:10
  */

@@ -1,7 +1,8 @@
 use std::ffi::OsStr;
 use std::fmt::Display;
+use std::path::Path;
 
-use anyhow::Result;
+use anyhow::{bail, Result};
 use futures_util::StreamExt;
 use riot_datatypes::lcu::{GameData, GamePhase, SessionEventData, SubscriptionResponse};
 use riot_datatypes::{GameId, MatchId};
@@ -17,7 +18,7 @@ use super::metadata;
 use super::recording_task::{GameCtx, Metadata, RecordingTask};
 use crate::app::{action, AppEvent, EventManager};
 use crate::cancellable;
-use crate::recorder::MetadataFile;
+use crate::recorder::{GameMetadata, MetadataFile};
 use crate::state::SettingsWrapper;
 
 #[derive(Clone)]
@@ -190,8 +191,8 @@ impl GameListener {
                             ingame_time_rec_start_offset,
                         } = metadata;
 
-                        let mut metadata_filepath = output_filepath;
-                        let video_id = metadata_filepath.file_name().and_then(OsStr::to_str).map(str::to_owned);
+                        let mut metadata_filepath = output_filepath.clone();
+                        let mut video_id = metadata_filepath.file_name().and_then(OsStr::to_str).map(str::to_owned);
                         metadata_filepath.set_extension("json");
 
                         match metadata::process_data_with_retry(
@@ -210,11 +211,21 @@ impl GameListener {
                                     game_metadata.highlights = deferred.highlights;
                                 }
 
+                                let new_video_id = matchup_video_id(&game_metadata);
+
                                 let result = action::save_recording_metadata(
                                     &metadata_filepath,
                                     &crate::recorder::MetadataFile::Metadata(game_metadata),
                                 );
                                 log::info!("writing game metadata to ({metadata_filepath:?}): {result:?}");
+
+                                match rename_with_dedup(&output_filepath, &new_video_id) {
+                                    Ok(renamed_video_id) => {
+                                        log::info!("renamed recording to {renamed_video_id}");
+                                        video_id = Some(renamed_video_id);
+                                    }
+                                    Err(e) => log::warn!("failed to auto-rename recording: {e}"),
+                                }
                             }
                             Err(e) => log::error!("unable to process data: {e}"),
                         }
@@ -237,4 +248,42 @@ impl GameListener {
 
         log::info!("recorder state: {}", self.state);
     }
+}
+
+/// builds the auto-rename video id: "<champ> vs <enemy laner> - <WIN|LOSS|REMAKE>" (no extension)
+fn matchup_video_id(metadata: &GameMetadata) -> String {
+    let result = if metadata.stats.game_ended_in_early_surrender {
+        "REMAKE"
+    } else if metadata.stats.win {
+        "WIN"
+    } else {
+        "LOSS"
+    };
+
+    let name = match &metadata.enemy_champion_name {
+        Some(enemy) => format!("{} vs {} - {}", metadata.champion_name, enemy, result),
+        None => format!("{} - {}", metadata.champion_name, result),
+    };
+
+    // strip characters that are invalid in windows filenames
+    name.chars()
+        .filter(|c| !matches!(c, '<' | '>' | ':' | '"' | '/' | '\\' | '|' | '?' | '*'))
+        .collect()
+}
+
+/// renames the recording (and its metadata file), appending " (2)", " (3)", ... if the name is taken
+fn rename_with_dedup(output_filepath: &Path, new_video_id: &str) -> Result<String> {
+    for n in 1..=20u32 {
+        let candidate = if n == 1 {
+            format!("{new_video_id}.mp4")
+        } else {
+            format!("{new_video_id} ({n}).mp4")
+        };
+
+        if action::rename_recording(output_filepath.to_owned(), candidate.clone())? {
+            return Ok(candidate);
+        }
+    }
+
+    bail!("no free filename found for '{new_video_id}'")
 }

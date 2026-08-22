@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{ChampionId, GameId, MapId, ParticipantId, QueueId, SpellId, SummonerId, Timestamp};
+use crate::{ChampionId, GameId, MapId, ParticipantId, QueueId, SpellId, SummonerId, Team, Timestamp};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -44,7 +44,20 @@ pub struct Participant {
     pub champion_id: ChampionId,
     pub spell1_id: SpellId,
     pub spell2_id: SpellId,
+    #[serde(default)]
+    pub team_id: Option<Team>,
+    #[serde(default)]
+    pub timeline: ParticipantTimeline,
     pub stats: Stats,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ParticipantTimeline {
+    #[serde(default)]
+    pub lane: String,
+    #[serde(default)]
+    pub role: String,
 }
 
 #[cfg_attr(feature = "specta", derive(specta::Type))]
@@ -69,4 +82,20 @@ pub struct Stats {
     pub game_ended_in_early_surrender: bool,
     pub game_ended_in_surrender: bool,
     pub win: bool,
+    #[serde(default)]
+    pub perk_primary_style: i64,
+    #[serde(default)]
+    pub perk_sub_style: i64,
+    #[serde(default)]
+    pub perk0: i64,
+    #[serde(default)]
+    pub perk1: i64,
+    #[serde(default)]
+    pub perk2: i64,
+    #[serde(default)]
+    pub perk3: i64,
+    #[serde(default)]
+    pub perk4: i64,
+    #[serde(default)]
+    pub perk5: i64,
 }

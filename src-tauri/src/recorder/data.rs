@@ -41,9 +41,24 @@ pub struct GameMetadata {
     pub queue: Queue,
     pub player: lcu::Player,
     pub champion_name: String,
+    #[serde(default)]
+    pub enemy_champion_name: Option<String>,
+    #[serde(default)]
+    pub summoner_spells: Vec<String>,
+    #[serde(default)]
+    pub runes: Runes,
     pub stats: lcu::Stats,
     pub participant_id: ParticipantId,
     pub events: Vec<GameEvent>,
+}
+
+#[cfg_attr(test, derive(specta::Type))]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Runes {
+    pub primary_style: String,
+    pub sub_style: String,
+    pub perks: Vec<String>,
 }
 
 #[cfg_attr(test, derive(specta::Type))]
