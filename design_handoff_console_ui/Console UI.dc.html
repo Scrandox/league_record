@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><meta name="design_doc_mode" content="canvas" /><link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" /><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" /><style>body{margin:0;background:#08080a;font-family:"IBM Plex Sans",system-ui,sans-serif}a{color:#5b8cff;text-decoration:none}a:hover{color:#8fb0ff}</style></helmet>
+
+<section style="padding:44px 48px 56px">
+  <div style="display:flex;align-items:baseline;gap:10px;margin:0 0 6px">
+    <span style="font:600 10px 'IBM Plex Mono',monospace;padding:4px 8px;background:#5b8cff;color:#000;letter-spacing:.06em">CONSOLE</span>
+    <span style="font:500 13px 'IBM Plex Sans',sans-serif;color:#fff">LeagueRecord — chosen direction, all screens</span>
+  </div>
+  <p style="margin:0 0 32px;font:400 12px/1.6 'IBM Plex Sans',sans-serif;color:rgba(255,255,255,.45);max-width:840px">Pure black surfaces, square corners, one blue accent, IBM Plex Sans for labels and IBM Plex Mono for every piece of data. Chrome is thin and fixed-height; the video gets whatever is left. Reference files: <a href="Overhaul.dc.html">Overhaul</a> (all three directions) · <a href="Current UI.dc.html">Current UI</a></p>
+
+  <div style="display:flex;flex-direction:column;gap:44px">
+
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="font:500 10px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:rgba(255,255,255,.35)">01 · PLAYER — DEFAULT VIEW</div>
+      <div data-screen-label="Player" style="width:1280px;height:800px;background:#000;border:1px solid rgba(255,255,255,.12);border-radius:4px;overflow:hidden;display:grid;grid-template-rows:34px 42px 1fr 26px">
+        <div style="display:flex;align-items:center;gap:10px;padding:0 10px;border-bottom:1px solid rgba(255,255,255,.1)">
+          <img src="assets/app-icon-32.png" alt="LeagueRecord" style="width:16px;height:16px;display:block" />
+          <span style="font:600 11px 'IBM Plex Mono',monospace;color:#5b8cff;letter-spacing:.14em">LEAGUERECORD</span>
+          <span style="font:400 11px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.3)">v1.9.2</span>
+          <div style="flex:1"></div>
+          <div style="display:flex;gap:14px;font:400 11px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.35)"><span>–</span><span>□</span><span>✕</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding:0 10px;background:#08080a;border-bottom:1px solid rgba(255,255,255,.1)">
+          <div style="display:flex;align-items:center;gap:7px;height:26px;padding:0 10px;background:#000;border:1px solid rgba(255,255,255,.14);width:240px"><span style="font:400 11px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.3)">⌕</span><span style="font:400 11.5px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.3)">filter recordings</span></div>
+          <div style="display:flex;gap:1px">
+            <span style="height:26px;display:flex;align-items:center;padding:0 10px;background:#5b8cff;color:#000;font:600 10.5px 'IBM Plex Mono',monospace;letter-spacing:.06em">ALL 42</span>
+            <span style="height:26px;display:flex;align-items:center;padding:0 10px;background:#0e0e12;color:rgba(255,255,255,.5);font:500 10.5px 'IBM Plex Mono',monospace;letter-spacing:.06em">FAVORITES 7</span>
+            <span style="height:26px;display:flex;align-items:center;padding:0 10px;background:#0e0e12;color:rgba(255,255,255,.5);font:500 10.5px 'IBM Plex Mono',monospace;letter-spacing:.06em">RANKED 28</span>
+          </div>
+          <div style="display:flex;gap:1px;margin-left:4px">
+            <span style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;background:#5b8cff;color:#000;font-size:11px">▤</span>
+            <span style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;background:#0e0e12;color:rgba(255,255,255,.5);font-size:11px">▦</span>
+          </div>
+          <div style="flex:1"></div>
+          <sc-if value="{{ recordingActive }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;align-items:center;gap:7px;height:26px;padding:0 10px;border:1px solid rgba(255,60,60,.5);background:rgba(255,60,60,.08)">
+              <span style="width:7px;height:7px;background:#ff3c3c"></span>
+              <span style="font:600 10.5px 'IBM Plex Mono',monospace;color:#ff6a6a;letter-spacing:.08em">RECORDING · 24:11</span>
+            </div>
+          </sc-if>
+          <span style="height:26px;display:flex;align-items:center;padding:0 10px;border:1px solid rgba(255,255,255,.16);color:rgba(255,255,255,.7);font:500 10.5px 'IBM Plex Mono',monospace">FOLDER ↗</span>
+          <span style="height:26px;display:flex;align-items:center;padding:0 10px;border:1px solid rgba(255,255,255,.16);color:rgba(255,255,255,.7);font:500 10.5px 'IBM Plex Mono',monospace">SETTINGS</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 320px;min-height:0">
+          <div style="display:grid;grid-template-rows:1fr auto;min-height:0;min-width:0">
+            <div style="min-height:0;display:flex;align-items:center;justify-content:center">
+              <div style="width:100%;aspect-ratio:16/9;background:repeating-linear-gradient(135deg,#0c0c10 0 14px,#08080b 14px 28px);display:flex;align-items:center;justify-content:center"><span style="font:400 11px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.2);letter-spacing:.1em">GAMEPLAY FRAME</span></div>
+            </div>
+            <div style="border-top:1px solid rgba(255,255,255,.1);padding:10px 12px 12px;background:#050507">
+              <div style="position:relative;height:22px;margin-bottom:9px">
+                <div style="position:absolute;left:0;right:0;top:9px;height:3px;background:rgba(255,255,255,.12)"></div>
+                <div style="position:absolute;left:0;top:9px;width:34%;height:3px;background:#5b8cff"></div>
+                <div style="position:absolute;left:34%;top:2px;width:2px;height:17px;background:#fff"></div>
+                <div style="position:absolute;left:11%;top:3px;width:3px;height:15px;background:#5fd67a"></div>
+                <div style="position:absolute;left:14.5%;top:3px;width:3px;height:15px;background:#2f8f57"></div>
+                <div style="position:absolute;left:22%;top:3px;width:3px;height:15px;background:#ff3c3c"></div>
+                <div style="position:absolute;left:29%;top:3px;width:3px;height:15px;background:#4f7cf7"></div>
+                <div style="position:absolute;left:31.5%;top:3px;width:3px;height:15px;background:#d8a13a"></div>
+                <div style="position:absolute;left:38%;top:3px;width:3px;height:15px;background:#d24fd2"></div>
+                <div style="position:absolute;left:41%;top:3px;width:3px;height:15px;background:#5fd67a"></div>
+                <div style="position:absolute;left:52%;top:3px;width:3px;height:15px;background:#8a5cf0"></div>
+                <div style="position:absolute;left:57%;top:3px;width:3px;height:15px;background:#ff3c3c"></div>
+                <div style="position:absolute;left:63%;top:3px;width:3px;height:15px;background:#d8a13a"></div>
+                <div style="position:absolute;left:71%;top:3px;width:3px;height:15px;background:#a12a2a"></div>
+                <div style="position:absolute;left:80%;top:3px;width:3px;height:15px;background:#5fd67a"></div>
+                <div style="position:absolute;left:88%;top:3px;width:3px;height:15px;background:#4f7cf7"></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:16px">
+                <div style="display:flex;align-items:center;gap:14px;font-size:13px;color:#fff">▶<span style="color:rgba(255,255,255,.55)">⏴</span><span style="color:rgba(255,255,255,.55)">⏵</span><span style="color:rgba(255,255,255,.55)">🔊</span></div>
+                <span style="font:500 12px 'IBM Plex Mono',monospace;color:#fff">00:11:04<span style="color:rgba(255,255,255,.3)"> / 00:32:40</span></span>
+                <div style="flex:1"></div>
+                <span style="font:500 10.5px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.55)">1.00×</span>
+                <span style="font-size:12px;color:rgba(255,255,255,.55)">⛶</span>
+              </div>
+            </div>
+          </div>
+          <div style="border-left:1px solid rgba(255,255,255,.1);display:grid;grid-template-rows:auto 1fr auto;min-height:0;background:#050507">
+            <div style="display:grid;grid-template-columns:1fr 30px 66px;gap:6px;padding:7px 10px;border-bottom:1px solid rgba(255,255,255,.1);font:600 9.5px 'IBM Plex Mono',monospace;letter-spacing:.1em;color:rgba(255,255,255,.3)"><span>NAME</span><span>R</span><span style="text-align:right">K/D/A</span></div>
+            <div style="min-height:0;overflow:hidden">
+              <div style="display:grid;grid-template-columns:1fr 30px 66px;gap:6px;padding:7px 10px;background:rgba(91,140,255,.14);border-left:2px solid #5b8cff;font:400 11.5px 'IBM Plex Mono',monospace;color:#fff"><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">2026-08-21_23-14</span><span style="color:#5fd67a">W</span><span style="text-align:right">11/3/8</span></div>
+              <div style="display:grid;grid-template-columns:1fr 30px 66px;gap:6px;padding:7px 10px;border-top:1px solid rgba(255,255,255,.06);font:400 11.5px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.7)"><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">2026-08-21_22-02</span><span style="color:#ff5a5a">L</span><span style="text-align:right">4/9/2</span></div>
+              <div style="display:grid;grid-template-columns:1fr 30px 66px;gap:6px;padding:7px 10px;border-top:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.03);font:400 11.5px 'IBM Plex Mono',monospace;color:#fff"><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><span style="color:#e8c86a">★</span> smurf pentakill game</span><span style="color:#5fd67a">W</span><span style="display:flex;gap:8px;justify-content:flex-end;color:rgba(255,255,255,.5)">✎ ✕</span></div>
+              <div style="display:grid;grid-template-columns:1fr 30px 66px;gap:6px;padding:7px 10px;border-top:1px solid rgba(255,255,255,.06);font:400 11.5px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.7)"><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">2026-08-20_21-47</span><span style="color:#5fd67a">W</span><span style="text-align:right">9/6/11</span></div>
+              <div style="display:grid;grid-template-columns:1fr 30px 66px;gap:6px;padding:7px 10px;border-top:1px solid rgba(255,255,255,.06);font:400 11.5px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.7)"><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">2026-08-19_19-33</span><span style="color:rgba(255,255,255,.4)">R</span><span style="text-align:right">0/0/0</span></div>
+              <div style="display:grid;grid-template-columns:1fr 30px 66px;gap:6px;padding:7px 10px;border-top:1px solid rgba(255,255,255,.06);font:400 11.5px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.7)"><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">2026-08-18_20-58</span><span style="color:#ff5a5a">L</span><span style="text-align:right">6/8/9</span></div>
+              <div style="display:grid;grid-template-columns:1fr 30px 66px;gap:6px;padding:7px 10px;border-top:1px solid rgba(255,255,255,.06);font:400 11.5px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.7)"><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">2026-08-18_20-11</span><span style="color:#5fd67a">W</span><span style="text-align:right">2/4/21</span></div>
+              <div style="display:grid;grid-template-columns:1fr 30px 66px;gap:6px;padding:7px 10px;border-top:1px solid rgba(255,255,255,.06);font:400 11.5px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.7)"><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">2026-08-17_23-40</span><span style="color:#ff5a5a">L</span><span style="text-align:right">7/7/3</span></div>
+              <div style="display:grid;grid-template-columns:1fr 30px 66px;gap:6px;padding:7px 10px;border-top:1px solid rgba(255,255,255,.06);font:400 11.5px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.7)"><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">2026-08-17_22-49</span><span style="color:#5fd67a">W</span><span style="text-align:right">5/2/14</span></div>
+              <div style="display:grid;grid-template-columns:1fr 30px 66px;gap:6px;padding:7px 10px;border-top:1px solid rgba(255,255,255,.06);font:400 11.5px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.7)"><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">2026-08-16_18-02</span><span style="color:#5fd67a">W</span><span style="text-align:right">13/4/7</span></div>
+            </div>
+            <div style="border-top:1px solid rgba(255,255,255,.1);padding:10px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="font:600 9.5px 'IBM Plex Mono',monospace;letter-spacing:.1em;color:rgba(255,255,255,.3)">MARKERS</span><span style="font:400 9.5px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.3)">34 EVENTS</span></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 10px">
+                <span style="display:flex;align-items:center;gap:7px;font:400 11px 'IBM Plex Mono',monospace;color:#fff"><span style="width:9px;height:9px;background:#5fd67a"></span>Kills</span>
+                <span style="display:flex;align-items:center;gap:7px;font:400 11px 'IBM Plex Mono',monospace;color:#fff"><span style="width:9px;height:9px;background:#d8a13a"></span>Dragon</span>
+                <span style="display:flex;align-items:center;gap:7px;font:400 11px 'IBM Plex Mono',monospace;color:#fff"><span style="width:9px;height:9px;background:#ff3c3c"></span>Deaths</span>
+                <span style="display:flex;align-items:center;gap:7px;font:400 11px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.35)"><span style="width:9px;height:9px;border:1px solid #d24fd2"></span>Herald</span>
+                <span style="display:flex;align-items:center;gap:7px;font:400 11px 'IBM Plex Mono',monospace;color:#fff"><span style="width:9px;height:9px;background:#2f8f57"></span>Assists</span>
+                <span style="display:flex;align-items:center;gap:7px;font:400 11px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.35)"><span style="width:9px;height:9px;border:1px solid #a12a2a"></span>Atakhan</span>
+                <span style="display:flex;align-items:center;gap:7px;font:400 11px 'IBM Plex Mono',monospace;color:#fff"><span style="width:9px;height:9px;background:#4f7cf7"></span>Structure</span>
+                <span style="display:flex;align-items:center;gap:7px;font:400 11px 'IBM Plex Mono',monospace;color:#fff"><span style="width:9px;height:9px;background:#8a5cf0"></span>Baron</span>
+              </div>
+              <div style="margin-top:10px;height:28px;display:flex;align-items:center;justify-content:center;border:1px solid #5b8cff;color:#5b8cff;font:600 10.5px 'IBM Plex Mono',monospace;letter-spacing:.08em">TIMESTAMPS</div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:18px;padding:0 10px;background:#0e0e12;border-top:1px solid rgba(255,255,255,.1);font:400 10px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.4)">
+          <span>FAKER#KR1</span><span>AHRI</span><span style="color:#fff">11/3/8</span><span>241 CS</span><span>34 WS</span><span>RANKED SOLO</span><span style="color:#5fd67a">VICTORY</span>
+          <div style="flex:1"></div><span>42 RECORDINGS · 14.62 GB</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="font:500 10px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:rgba(255,255,255,.35)">02 · LIBRARY — GRID VIEW</div>
+      <div data-screen-label="Library grid" style="width:1280px;height:640px;background:#000;border:1px solid rgba(255,255,255,.12);border-radius:4px;overflow:hidden;display:grid;grid-template-rows:34px 42px 1fr 26px">
+        <div style="display:flex;align-items:center;gap:10px;padding:0 10px;border-bottom:1px solid rgba(255,255,255,.1)">
+          <img src="assets/app-icon-32.png" alt="LeagueRecord" style="width:16px;height:16px;display:block" />
+          <span style="font:600 11px 'IBM Plex Mono',monospace;color:#5b8cff;letter-spacing:.14em">LEAGUERECORD</span>
+          <span style="font:400 11px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.3)">LIBRARY</span>
+          <div style="flex:1"></div>
+          <div style="display:flex;gap:14px;font:400 11px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.35)"><span>–</span><span>□</span><span>✕</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding:0 10px;background:#08080a;border-bottom:1px solid rgba(255,255,255,.1)">
+          <div style="display:flex;align-items:center;gap:7px;height:26px;padding:0 10px;background:#000;border:1px solid rgba(255,255,255,.14);width:240px"><span style="font:400 11px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.3)">⌕</span><span style="font:400 11.5px 'IBM Plex Mono',monospace;color:#fff">ahri</span><span style="font:400 11.5px 'IBM Plex Mono',monospace;color:#5b8cff">|</span></div>
+          <div style="display:flex;gap:1px">
+            <span style="height:26px;display:flex;align-items:center;padding:0 10px;background:#5b8cff;color:#000;font:600 10.5px 'IBM Plex Mono',monospace;letter-spacing:.06em">ALL 42</span>
+            <span style="height:26px;display:flex;align-items:center;padding:0 10px;background:#0e0e12;color:rgba(255,255,255,.5);font:500 10.5px 'IBM Plex Mono',monospace;letter-spacing:.06em">FAVORITES 7</span>
+            <span style="height:26px;display:flex;align-items:center;padding:0 10px;background:#0e0e12;color:rgba(255,255,255,.5);font:500 10.5px 'IBM Plex Mono',monospace;letter-spacing:.06em">RANKED 28</span>
+          </div>
+          <div style="display:flex;gap:1px;margin-left:4px">
+            <span style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;background:#0e0e12;color:rgba(255,255,255,.5);font-size:11px">▤</span>
+            <span style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;background:#5b8cff;color:#000;font-size:11px">▦</span>
+          </div>
+          <div style="flex:1"></div>
+          <span style="height:26px;display:flex;align-items:center;padding:0 10px;border:1px solid rgba(255,255,255,.16);color:rgba(255,255,255,.7);font:500 10.5px 'IBM Plex Mono',monospace">SORT: NEWEST ▾</span>
+        </div>
+        <div style="padding:12px;display:grid;grid-template-columns:repeat(5,1fr);gap:10px;align-content:start;overflow:hidden">
+          <div style="border:1px solid #5b8cff;background:#050507">
+            <div style="position:relative;aspect-ratio:16/9;background:repeating-linear-gradient(135deg,#0f0f13 0 12px,#0a0a0d 12px 24px)">
+              <span style="position:absolute;left:6px;top:6px;font:600 9px 'IBM Plex Mono',monospace;letter-spacing:.08em;padding:2px 5px;background:rgba(95,214,122,.16);color:#5fd67a">W</span>
+              <span style="position:absolute;right:6px;bottom:6px;font:500 9.5px 'IBM Plex Mono',monospace;color:#fff;background:rgba(0,0,0,.7);padding:1px 4px">32:40</span>
+              <span style="position:absolute;left:6px;bottom:6px;font:400 8.5px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.25)">thumb</span>
+            </div>
+            <div style="padding:7px 8px">
+              <div style="font:400 11px 'IBM Plex Mono',monospace;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">2026-08-21_23-14</div>
+              <div style="margin-top:3px;font:400 10px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.4)">AHRI · 11/3/8</div>
+            </div>
+          </div>
+          <div style="border:1px solid rgba(255,255,255,.1);background:#050507">
+            <div style="position:relative;aspect-ratio:16/9;background:repeating-linear-gradient(135deg,#0f0f13 0 12px,#0a0a0d 12px 24px)">
+              <span style="position:absolute;left:6px;top:6px;font:600 9px 'IBM Plex Mono',monospace;letter-spacing:.08em;padding:2px 5px;background:rgba(255,90,90,.16);color:#ff5a5a">L</span>
+              <span style="position:absolute;right:6px;bottom:6px;font:500 9.5px 'IBM Plex Mono',monospace;color:#fff;background:rgba(0,0,0,.7);padding:1px 4px">28:05</span>
+            </div>
+            <div style="padding:7px 8px"><div style="font:400 11px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">2026-08-21_22-02</div><div style="margin-top:3px;font:400 10px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.4)">VIKTOR · 4/9/2</div></div>
+          </div>
+          <div style="border:1px solid rgba(255,255,255,.1);background:#050507">
+            <div style="position:relative;aspect-ratio:16/9;background:repeating-linear-gradient(135deg,#0f0f13 0 12px,#0a0a0d 12px 24px)">
+              <span style="position:absolute;left:6px;top:6px;font:600 9px 'IBM Plex Mono',monospace;letter-spacing:.08em;padding:2px 5px;background:rgba(95,214,122,.16);color:#5fd67a">W</span>
+              <span style="position:absolute;right:6px;top:6px;font-size:10px;color:#e8c86a">★</span>
+              <span style="position:absolute;right:6px;bottom:6px;font:500 9.5px 'IBM Plex Mono',monospace;color:#fff;background:rgba(0,0,0,.7);padding:1px 4px">24:52</span>
+            </div>
+            <div style="padding:7px 8px"><div style="font:400 11px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">smurf pentakill game</div><div style="margin-top:3px;font:400 10px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.4)">KAISA · 18/2/6</div></div>
+          </div>
+          <div style="border:1px solid rgba(255,255,255,.1);background:#050507">
+            <div style="position:relative;aspect-ratio:16/9;background:repeating-linear-gradient(135deg,#0f0f13 0 12px,#0a0a0d 12px 24px)">
+              <span style="position:absolute;left:6px;top:6px;font:600 9px 'IBM Plex Mono',monospace;letter-spacing:.08em;padding:2px 5px;background:rgba(95,214,122,.16);color:#5fd67a">W</span>
+              <span style="position:absolute;right:6px;bottom:6px;font:500 9.5px 'IBM Plex Mono',monospace;color:#fff;background:rgba(0,0,0,.7);padding:1px 4px">35:18</span>
+            </div>
+            <div style="padding:7px 8px"><div style="font:400 11px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">2026-08-20_21-47</div><div style="margin-top:3px;font:400 10px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.4)">JINX · 9/6/11</div></div>
+          </div>
+          <div style="border:1px solid rgba(255,255,255,.1);background:#050507">
+            <div style="position:relative;aspect-ratio:16/9;background:repeating-linear-gradient(135deg,#0f0f13 0 12px,#0a0a0d 12px 24px)">
+              <span style="position:absolute;left:6px;top:6px;font:600 9px 'IBM Plex Mono',monospace;letter-spacing:.08em;padding:2px 5px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.55)">R</span>
+              <span style="position:absolute;right:6px;bottom:6px;font:500 9.5px 'IBM Plex Mono',monospace;color:#fff;background:rgba(0,0,0,.7);padding:1px 4px">04:12</span>
+            </div>
+            <div style="padding:7px 8px"><div style="font:400 11px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">2026-08-19_19-33</div><div style="margin-top:3px;font:400 10px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.4)">SETT · 0/0/0</div></div>
+          </div>
+          <div style="border:1px solid rgba(255,255,255,.1);background:#050507">
+            <div style="position:relative;aspect-ratio:16/9;background:repeating-linear-gradient(135deg,#0f0f13 0 12px,#0a0a0d 12px 24px)">
+              <span style="position:absolute;left:6px;top:6px;font:600 9px 'IBM Plex Mono',monospace;letter-spacing:.08em;padding:2px 5px;background:rgba(255,90,90,.16);color:#ff5a5a">L</span>
+              <span style="position:absolute;right:6px;bottom:6px;font:500 9.5px 'IBM Plex Mono',monospace;color:#fff;background:rgba(0,0,0,.7);padding:1px 4px">31:44</span>
+            </div>
+            <div style="padding:7px 8px"><div style="font:400 11px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">2026-08-18_20-58</div><div style="margin-top:3px;font:400 10px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.4)">LEE SIN · 6/8/9</div></div>
+          </div>
+          <div style="border:1px solid rgba(255,255,255,.1);background:#050507">
+            <div style="position:relative;aspect-ratio:16/9;background:repeating-linear-gradient(135deg,#0f0f13 0 12px,#0a0a0d 12px 24px)">
+              <span style="position:absolute;left:6px;top:6px;font:600 9px 'IBM Plex Mono',monospace;letter-spacing:.08em;padding:2px 5px;background:rgba(95,214,122,.16);color:#5fd67a">W</span>
+              <span style="position:absolute;right:6px;bottom:6px;font:500 9.5px 'IBM Plex Mono',monospace;color:#fff;background:rgba(0,0,0,.7);padding:1px 4px">29:30</span>
+            </div>
+            <div style="padding:7px 8px"><div style="font:400 11px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">2026-08-18_20-11</div><div style="margin-top:3px;font:400 10px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.4)">THRESH · 2/4/21</div></div>
+          </div>
+          <div style="border:1px solid rgba(255,255,255,.1);background:#050507">
+            <div style="position:relative;aspect-ratio:16/9;background:repeating-linear-gradient(135deg,#0f0f13 0 12px,#0a0a0d 12px 24px)">
+              <span style="position:absolute;left:6px;top:6px;font:600 9px 'IBM Plex Mono',monospace;letter-spacing:.08em;padding:2px 5px;background:rgba(255,90,90,.16);color:#ff5a5a">L</span>
+              <span style="position:absolute;right:6px;bottom:6px;font:500 9.5px 'IBM Plex Mono',monospace;color:#fff;background:rgba(0,0,0,.7);padding:1px 4px">26:19</span>
+            </div>
+            <div style="padding:7px 8px"><div style="font:400 11px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">2026-08-17_23-40</div><div style="margin-top:3px;font:400 10px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.4)">AATROX · 7/7/3</div></div>
+          </div>
+          <div style="border:1px solid rgba(255,255,255,.1);background:#050507">
+            <div style="position:relative;aspect-ratio:16/9;background:repeating-linear-gradient(135deg,#0f0f13 0 12px,#0a0a0d 12px 24px)">
+              <span style="position:absolute;left:6px;top:6px;font:600 9px 'IBM Plex Mono',monospace;letter-spacing:.08em;padding:2px 5px;background:rgba(95,214,122,.16);color:#5fd67a">W</span>
+              <span style="position:absolute;right:6px;bottom:6px;font:500 9.5px 'IBM Plex Mono',monospace;color:#fff;background:rgba(0,0,0,.7);padding:1px 4px">27:03</span>
+            </div>
+            <div style="padding:7px 8px"><div style="font:400 11px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">2026-08-17_22-49</div><div style="margin-top:3px;font:400 10px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.4)">ORIANNA · 5/2/14</div></div>
+          </div>
+          <div style="border:1px solid rgba(255,255,255,.1);background:#050507">
+            <div style="position:relative;aspect-ratio:16/9;background:repeating-linear-gradient(135deg,#0f0f13 0 12px,#0a0a0d 12px 24px)">
+              <span style="position:absolute;left:6px;top:6px;font:600 9px 'IBM Plex Mono',monospace;letter-spacing:.08em;padding:2px 5px;background:rgba(95,214,122,.16);color:#5fd67a">W</span>
+              <span style="position:absolute;right:6px;bottom:6px;font:500 9.5px 'IBM Plex Mono',monospace;color:#fff;background:rgba(0,0,0,.7);padding:1px 4px">30:11</span>
+            </div>
+            <div style="padding:7px 8px"><div style="font:400 11px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">2026-08-16_18-02</div><div style="margin-top:3px;font:400 10px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.4)">GAREN · 13/4/7</div></div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:18px;padding:0 10px;background:#0e0e12;border-top:1px solid rgba(255,255,255,.1);font:400 10px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.4)">
+          <span>SELECTED: 2026-08-21_23-14</span><div style="flex:1"></div><span>42 RECORDINGS · 14.62 GB</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="font:500 10px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:rgba(255,255,255,.35)">03 · DIALOGS &amp; PANELS</div>
+      <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start;width:1280px">
+        <div data-screen-label="Rename dialog" style="width:412px;background:#000;border:1px solid rgba(255,255,255,.12);border-radius:4px;padding:40px 24px">
+          <div style="background:#08080a;border:1px solid rgba(255,255,255,.16)">
+            <div style="display:flex;align-items:center;justify-content:space-between;height:30px;padding:0 10px;border-bottom:1px solid rgba(255,255,255,.1)"><span style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.1em;color:rgba(255,255,255,.6)">RENAME</span><span style="font:400 11px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.35)">✕</span></div>
+            <div style="padding:14px">
+              <div style="font:400 10px 'IBM Plex Mono',monospace;letter-spacing:.08em;color:rgba(255,255,255,.35)">CURRENT</div>
+              <div style="margin-top:4px;font:400 11.5px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.7)">2026-08-21_23-14.mp4</div>
+              <div style="margin-top:12px;height:30px;display:flex;align-items:center;padding:0 9px;background:#000;border:1px solid #5b8cff;font:400 12px 'IBM Plex Mono',monospace;color:#fff">smurf pentakill game<span style="color:#5b8cff">|</span></div>
+              <div style="margin-top:6px;font:400 10px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.3)">NAME MUST BE UNIQUE · EXT PRESERVED</div>
+              <div style="margin-top:16px;display:flex;gap:6px;justify-content:flex-end">
+                <span style="height:28px;display:flex;align-items:center;padding:0 12px;border:1px solid rgba(255,255,255,.16);font:500 10.5px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.7)">CANCEL</span>
+                <span style="height:28px;display:flex;align-items:center;padding:0 12px;background:#5b8cff;font:600 10.5px 'IBM Plex Mono',monospace;color:#000">SAVE</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div data-screen-label="Delete dialog" style="width:412px;background:#000;border:1px solid rgba(255,255,255,.12);border-radius:4px;padding:40px 24px">
+          <div style="background:#08080a;border:1px solid rgba(255,60,60,.4)">
+            <div style="display:flex;align-items:center;justify-content:space-between;height:30px;padding:0 10px;border-bottom:1px solid rgba(255,60,60,.3)"><span style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#ff6a6a">DELETE RECORDING</span><span style="font:400 11px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.35)">✕</span></div>
+            <div style="padding:14px">
+              <div style="font:400 11.5px 'IBM Plex Mono',monospace;color:#fff">2026-08-21_23-14.mp4</div>
+              <div style="margin-top:6px;font:400 11px/1.55 'IBM Plex Sans',sans-serif;color:rgba(255,255,255,.55)">Removed from disk along with its metadata file. This cannot be undone.</div>
+              <div style="margin-top:10px;display:flex;gap:14px;font:400 10px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.35)"><span>1.42 GB</span><span>32:40</span><span>34 EVENTS</span></div>
+              <label style="margin-top:14px;display:flex;align-items:center;gap:8px;font:400 10.5px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.5)"><input type="checkbox" style="accent-color:#5b8cff;margin:0" />DON'T ASK AGAIN</label>
+              <div style="margin-top:16px;display:flex;gap:6px;justify-content:flex-end">
+                <span style="height:28px;display:flex;align-items:center;padding:0 12px;border:1px solid rgba(255,255,255,.16);font:500 10.5px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.7)">CANCEL</span>
+                <span style="height:28px;display:flex;align-items:center;padding:0 12px;background:#ff3c3c;font:600 10.5px 'IBM Plex Mono',monospace;color:#000">DELETE</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div data-screen-label="Timestamps panel" style="width:412px;background:#000;border:1px solid rgba(255,255,255,.12);border-radius:4px;padding:0;overflow:hidden">
+          <div style="display:flex;align-items:center;justify-content:space-between;height:30px;padding:0 10px;border-bottom:1px solid rgba(255,255,255,.1);background:#08080a"><span style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.1em;color:rgba(255,255,255,.6)">TIMESTAMPS · 34</span><span style="height:20px;display:flex;align-items:center;padding:0 8px;border:1px solid rgba(255,255,255,.16);font:500 9.5px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.7)">COPY ALL</span></div>
+          <div style="display:grid;grid-template-columns:3px 68px 1fr 46px;gap:8px;align-items:center;padding:6px 10px;border-bottom:1px solid rgba(255,255,255,.1);font:600 9.5px 'IBM Plex Mono',monospace;letter-spacing:.1em;color:rgba(255,255,255,.3)"><span></span><span>TIME</span><span>EVENT</span><span style="text-align:right">GO</span></div>
+          <div style="display:grid;grid-template-columns:3px 68px 1fr 46px;gap:8px;align-items:center;padding:6px 10px;border-bottom:1px solid rgba(255,255,255,.06);font:400 11px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.75)"><span style="width:3px;height:13px;background:#5fd67a"></span><span>00:03:12</span><span>Kill</span><span style="text-align:right;color:rgba(255,255,255,.3)">↵</span></div>
+          <div style="display:grid;grid-template-columns:3px 68px 1fr 46px;gap:8px;align-items:center;padding:6px 10px;border-bottom:1px solid rgba(255,255,255,.06);font:400 11px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.75)"><span style="width:3px;height:13px;background:#2f8f57"></span><span>00:04:48</span><span>Assist</span><span style="text-align:right;color:rgba(255,255,255,.3)">↵</span></div>
+          <div style="display:grid;grid-template-columns:3px 68px 1fr 46px;gap:8px;align-items:center;padding:6px 10px;border-bottom:1px solid rgba(255,255,255,.06);font:400 11px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.75)"><span style="width:3px;height:13px;background:#4f7cf7"></span><span>00:07:05</span><span>Turret</span><span style="text-align:right;color:rgba(255,255,255,.3)">↵</span></div>
+          <div style="display:grid;grid-template-columns:3px 68px 1fr 46px;gap:8px;align-items:center;padding:6px 10px;border-bottom:1px solid rgba(255,255,255,.06);background:rgba(91,140,255,.12);font:400 11px 'IBM Plex Mono',monospace;color:#fff"><span style="width:3px;height:13px;background:#ff3c3c"></span><span>00:09:31</span><span>Death</span><span style="text-align:right;color:#5b8cff">↵</span></div>
+          <div style="display:grid;grid-template-columns:3px 68px 1fr 46px;gap:8px;align-items:center;padding:6px 10px;border-bottom:1px solid rgba(255,255,255,.06);font:400 11px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.75)"><span style="width:3px;height:13px;background:#d8a13a"></span><span>00:12:18</span><span>Infernal-Dragon</span><span style="text-align:right;color:rgba(255,255,255,.3)">↵</span></div>
+          <div style="display:grid;grid-template-columns:3px 68px 1fr 46px;gap:8px;align-items:center;padding:6px 10px;border-bottom:1px solid rgba(255,255,255,.06);font:400 11px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.75)"><span style="width:3px;height:13px;background:#d24fd2"></span><span>00:15:02</span><span>Herald</span><span style="text-align:right;color:rgba(255,255,255,.3)">↵</span></div>
+          <div style="display:grid;grid-template-columns:3px 68px 1fr 46px;gap:8px;align-items:center;padding:6px 10px;border-bottom:1px solid rgba(255,255,255,.06);font:400 11px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.75)"><span style="width:3px;height:13px;background:#8a5cf0"></span><span>00:21:40</span><span>Baron</span><span style="text-align:right;color:rgba(255,255,255,.3)">↵</span></div>
+          <div style="display:grid;grid-template-columns:3px 68px 1fr 46px;gap:8px;align-items:center;padding:6px 10px;font:400 11px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.75)"><span style="width:3px;height:13px;background:#a12a2a"></span><span>00:28:54</span><span>Atakhan</span><span style="text-align:right;color:rgba(255,255,255,.3)">↵</span></div>
+        </div>
+        <div data-screen-label="States" style="width:412px;background:#000;border:1px solid rgba(255,255,255,.12);border-radius:4px;padding:14px">
+          <div style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.1em;color:rgba(255,255,255,.35)">RECORDING STATES</div>
+          <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;align-items:center;gap:7px;height:26px;padding:0 10px;border:1px solid rgba(255,60,60,.5);background:rgba(255,60,60,.08);width:fit-content"><span style="width:7px;height:7px;background:#ff3c3c"></span><span style="font:600 10.5px 'IBM Plex Mono',monospace;color:#ff6a6a;letter-spacing:.08em">RECORDING · 24:11</span></div>
+            <div style="display:flex;align-items:center;gap:7px;height:26px;padding:0 10px;border:1px solid rgba(255,255,255,.14);width:fit-content"><span style="width:7px;height:7px;background:rgba(255,255,255,.3)"></span><span style="font:500 10.5px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.45);letter-spacing:.08em">IDLE · WAITING FOR GAME</span></div>
+            <div style="display:flex;align-items:center;gap:7px;height:26px;padding:0 10px;border:1px solid rgba(91,140,255,.5);background:rgba(91,140,255,.08);width:fit-content"><span style="width:7px;height:7px;background:#5b8cff"></span><span style="font:600 10.5px 'IBM Plex Mono',monospace;color:#5b8cff;letter-spacing:.08em">SAVING · 92%</span></div>
+          </div>
+          <div style="margin-top:14px;font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.1em;color:rgba(255,255,255,.35)">TOAST</div>
+          <div style="margin-top:10px;width:262px;background:#0e0e12;border:1px solid rgba(255,255,255,.16);border-left:2px solid #ff3c3c;padding:9px 11px">
+            <div style="font:600 11px 'IBM Plex Mono',monospace;color:#fff;letter-spacing:.04em">RECORDING STARTED</div>
+            <div style="margin-top:4px;font:400 10px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.45)">RANKED SOLO · 1080p60 · Q30</div>
+          </div>
+          <div style="margin-top:14px;font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.1em;color:rgba(255,255,255,.35)">EMPTY LIST</div>
+          <div style="margin-top:10px;padding:22px 12px;border:1px dashed rgba(255,255,255,.14);text-align:center">
+            <div style="font:400 11.5px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.5)">NO RECORDINGS YET</div>
+            <div style="margin-top:5px;font:400 10.5px/1.5 'IBM Plex Sans',sans-serif;color:rgba(255,255,255,.35)">Start a game — capture begins automatically.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="font:500 10px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:rgba(255,255,255,.35)">04 · TOKENS — THE PART TO HAND TO CLAUDE CODE</div>
+      <div style="width:1280px;background:#000;border:1px solid rgba(255,255,255,.12);border-radius:4px;padding:16px;display:grid;grid-template-columns:repeat(4,1fr);gap:20px">
+        <div>
+          <div style="font:600 9.5px 'IBM Plex Mono',monospace;letter-spacing:.1em;color:rgba(255,255,255,.3);padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.1)">SURFACES</div>
+          <div style="display:flex;flex-direction:column;gap:5px;margin-top:8px">
+            <div style="display:flex;align-items:center;gap:8px;font:400 10.5px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.7)"><span style="width:16px;height:16px;background:#000;border:1px solid rgba(255,255,255,.2)"></span>#000000 base</div>
+            <div style="display:flex;align-items:center;gap:8px;font:400 10.5px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.7)"><span style="width:16px;height:16px;background:#050507;border:1px solid rgba(255,255,255,.2)"></span>#050507 sunken</div>
+            <div style="display:flex;align-items:center;gap:8px;font:400 10.5px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.7)"><span style="width:16px;height:16px;background:#08080a;border:1px solid rgba(255,255,255,.2)"></span>#08080A bar</div>
+            <div style="display:flex;align-items:center;gap:8px;font:400 10.5px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.7)"><span style="width:16px;height:16px;background:#0e0e12;border:1px solid rgba(255,255,255,.2)"></span>#0E0E12 raised</div>
+          </div>
+        </div>
+        <div>
+          <div style="font:600 9.5px 'IBM Plex Mono',monospace;letter-spacing:.1em;color:rgba(255,255,255,.3);padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.1)">ACCENT &amp; STATUS</div>
+          <div style="display:flex;flex-direction:column;gap:5px;margin-top:8px">
+            <div style="display:flex;align-items:center;gap:8px;font:400 10.5px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.7)"><span style="width:16px;height:16px;background:#5b8cff"></span>#5B8CFF accent</div>
+            <div style="display:flex;align-items:center;gap:8px;font:400 10.5px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.7)"><span style="width:16px;height:16px;background:#5fd67a"></span>#5FD67A win</div>
+            <div style="display:flex;align-items:center;gap:8px;font:400 10.5px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.7)"><span style="width:16px;height:16px;background:#ff5a5a"></span>#FF5A5A loss</div>
+            <div style="display:flex;align-items:center;gap:8px;font:400 10.5px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.7)"><span style="width:16px;height:16px;background:#ff3c3c"></span>#FF3C3C recording</div>
+            <div style="display:flex;align-items:center;gap:8px;font:400 10.5px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.7)"><span style="width:16px;height:16px;background:#e8c86a"></span>#E8C86A favorite</div>
+          </div>
+        </div>
+        <div>
+          <div style="font:600 9.5px 'IBM Plex Mono',monospace;letter-spacing:.1em;color:rgba(255,255,255,.3);padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.1)">EVENT MARKERS</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px 10px;margin-top:8px">
+            <div style="display:flex;align-items:center;gap:7px;font:400 10px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.7)"><span style="width:12px;height:12px;background:#5fd67a"></span>kill</div>
+            <div style="display:flex;align-items:center;gap:7px;font:400 10px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.7)"><span style="width:12px;height:12px;background:#d8a13a"></span>dragon</div>
+            <div style="display:flex;align-items:center;gap:7px;font:400 10px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.7)"><span style="width:12px;height:12px;background:#ff3c3c"></span>death</div>
+            <div style="display:flex;align-items:center;gap:7px;font:400 10px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.7)"><span style="width:12px;height:12px;background:#d24fd2"></span>herald</div>
+            <div style="display:flex;align-items:center;gap:7px;font:400 10px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.7)"><span style="width:12px;height:12px;background:#2f8f57"></span>assist</div>
+            <div style="display:flex;align-items:center;gap:7px;font:400 10px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.7)"><span style="width:12px;height:12px;background:#a12a2a"></span>atakhan</div>
+            <div style="display:flex;align-items:center;gap:7px;font:400 10px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.7)"><span style="width:12px;height:12px;background:#4f7cf7"></span>structure</div>
+            <div style="display:flex;align-items:center;gap:7px;font:400 10px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.7)"><span style="width:12px;height:12px;background:#8a5cf0"></span>baron</div>
+          </div>
+        </div>
+        <div>
+          <div style="font:600 9.5px 'IBM Plex Mono',monospace;letter-spacing:.1em;color:rgba(255,255,255,.3);padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.1)">TYPE &amp; METRICS</div>
+          <div style="display:flex;flex-direction:column;gap:4px;margin-top:8px;font:400 10.5px/1.5 'IBM Plex Mono',monospace;color:rgba(255,255,255,.6)">
+            <div><span style="color:#fff">Plex Sans</span> — labels, prose</div>
+            <div><span style="color:#fff">Plex Mono</span> — all data</div>
+            <div>sizes 9.5 / 10.5 / 11.5 / 12</div>
+            <div>caps tracking .08–.14em</div>
+            <div>radius 0 · window 4</div>
+            <div>controls 26px · rows 30px</div>
+            <div>bars 34 / 42 / 26px</div>
+            <div>gutters 6 / 10 / 12 / 16</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;recordingActive&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;States&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    return { recordingActive: this.props.recordingActive ?? true };
+  }
+}
+</script>
+</body>
+</html>

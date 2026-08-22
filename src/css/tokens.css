@@ -1,0 +1,367 @@
+/* LeagueRecord design tokens — see DESIGN.md
+   Import first, before every other stylesheet. */
+
+:root {
+    /* surfaces: sunken < base < bar < raised */
+    --bg-base: #000000;
+    --bg-sunken: #050507;
+    --bg-bar: #08080a;
+    --bg-raised: #0e0e12;
+
+    /* lines */
+    --line: rgba(255, 255, 255, 0.1);
+    --line-strong: rgba(255, 255, 255, 0.16);
+    --line-soft: rgba(255, 255, 255, 0.06);
+
+    /* text */
+    --text: #ffffff;
+    --text-2: rgba(255, 255, 255, 0.7);
+    --text-3: rgba(255, 255, 255, 0.5);
+    --text-4: rgba(255, 255, 255, 0.35);
+    --text-5: rgba(255, 255, 255, 0.3);
+
+    /* accent + status */
+    --accent: #5b8cff;
+    --accent-fill: rgba(91, 140, 255, 0.14);
+    --on-accent: #000000;
+    --win: #5fd67a;
+    --loss: #ff5a5a;
+    --rec: #ff3c3c;
+    --favorite: #e8c86a;
+    --neutral-result: rgba(255, 255, 255, 0.4);
+
+    /* event markers — stable, do not reassign */
+    --m-kill: #5fd67a;
+    --m-death: #ff3c3c;
+    --m-assist: #2f8f57;
+    --m-structure: #4f7cf7;
+    --m-dragon: #d8a13a;
+    --m-herald: #d24fd2;
+    --m-atakhan: #a12a2a;
+    --m-baron: #8a5cf0;
+    --m-highlight: #3fbfb4;
+
+    /* type */
+    --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+    --fs-micro: 9.5px;
+    --fs-chrome: 10.5px;
+    --fs-body: 11.5px;
+    --fs-time: 12px;
+    --track-micro: 0.1em;
+    --track-chrome: 0.08em;
+    --track-wordmark: 0.14em;
+
+    /* metrics */
+    --h-titlebar: 34px;
+    --h-cmdbar: 42px;
+    --h-statusbar: 26px;
+    --h-control: 26px;
+    --h-row: 30px;
+    --pad-1: 6px;
+    --pad-2: 10px;
+    --pad-3: 12px;
+    --pad-4: 16px;
+    --sidebar-w: 320px;
+    --radius: 0;
+    --radius-window: 4px;
+
+    --transition: 120ms linear;
+}
+
+/* ---- primitives ---- */
+
+.lr-window {
+    display: grid;
+    grid-template-rows: var(--h-titlebar) var(--h-cmdbar) 1fr var(--h-statusbar);
+    height: 100vh;
+    background: var(--bg-base);
+    color: var(--text);
+    font-family: var(--font-sans);
+    border-radius: var(--radius-window);
+    overflow: hidden;
+}
+
+.lr-titlebar,
+.lr-cmdbar,
+.lr-statusbar {
+    display: flex;
+    align-items: center;
+    padding: 0 var(--pad-2);
+}
+
+.lr-titlebar {
+    gap: var(--pad-2);
+    border-bottom: 1px solid var(--line);
+}
+
+.lr-cmdbar {
+    gap: 8px;
+    background: var(--bg-bar);
+    border-bottom: 1px solid var(--line);
+}
+
+.lr-statusbar {
+    gap: 18px;
+    background: var(--bg-raised);
+    border-top: 1px solid var(--line);
+    font: 400 10px var(--font-mono);
+    color: var(--text-4);
+}
+
+.lr-wordmark {
+    font: 600 11px var(--font-mono);
+    letter-spacing: var(--track-wordmark);
+    color: var(--accent);
+}
+
+.lr-label {
+    font: 600 var(--fs-micro) var(--font-mono);
+    letter-spacing: var(--track-micro);
+    text-transform: uppercase;
+    color: var(--text-4);
+}
+
+.lr-btn {
+    height: var(--h-control);
+    display: inline-flex;
+    align-items: center;
+    padding: 0 var(--pad-2);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--text-2);
+    font: 500 var(--fs-chrome) var(--font-mono);
+    letter-spacing: var(--track-chrome);
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: border-color var(--transition), color var(--transition);
+}
+.lr-btn:hover {
+    border-color: var(--text-4);
+    color: var(--text);
+}
+
+.lr-btn--primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--on-accent);
+    font-weight: 600;
+}
+.lr-btn--danger {
+    background: var(--rec);
+    border-color: var(--rec);
+    color: var(--on-accent);
+    font-weight: 600;
+}
+.lr-btn--accent-outline {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.lr-input {
+    height: var(--h-control);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 0 9px;
+    background: var(--bg-base);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    font: 400 var(--fs-body) var(--font-mono);
+    color: var(--text);
+}
+.lr-input:focus-within {
+    border-color: var(--accent);
+}
+.lr-input::placeholder {
+    color: var(--text-4);
+}
+
+.lr-tabs {
+    display: flex;
+    gap: 1px;
+}
+.lr-tab {
+    height: var(--h-control);
+    display: flex;
+    align-items: center;
+    padding: 0 var(--pad-2);
+    background: var(--bg-raised);
+    color: var(--text-3);
+    font: 500 var(--fs-chrome) var(--font-mono);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+.lr-tab[aria-selected="true"] {
+    background: var(--accent);
+    color: var(--on-accent);
+    font-weight: 600;
+}
+
+.lr-table {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-sunken);
+}
+.lr-table__head,
+.lr-row {
+    display: grid;
+    grid-template-columns: 1fr 30px 66px;
+    gap: var(--pad-1);
+    padding: 7px var(--pad-2);
+    align-items: center;
+}
+.lr-table__head {
+    border-bottom: 1px solid var(--line);
+    font: 600 var(--fs-micro) var(--font-mono);
+    letter-spacing: var(--track-micro);
+    color: var(--text-4);
+}
+.lr-row {
+    border-top: 1px solid var(--line-soft);
+    border-left: 2px solid transparent;
+    font: 400 var(--fs-body) var(--font-mono);
+    color: var(--text-2);
+    cursor: pointer;
+    transition: background var(--transition);
+}
+.lr-row:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+.lr-row[aria-selected="true"] {
+    background: var(--accent-fill);
+    border-left-color: var(--accent);
+    color: var(--text);
+}
+.lr-row__actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    color: var(--text-3);
+    visibility: hidden;
+}
+.lr-row:hover .lr-row__actions,
+.lr-row[aria-selected="true"] .lr-row__actions {
+    visibility: visible;
+}
+
+.lr-pill {
+    height: var(--h-control);
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 0 var(--pad-2);
+    border: 1px solid var(--line-strong);
+    color: var(--text-3);
+    font: 500 var(--fs-chrome) var(--font-mono);
+    letter-spacing: var(--track-chrome);
+}
+.lr-pill__dot {
+    width: 7px;
+    height: 7px;
+    background: currentColor;
+}
+.lr-pill--rec {
+    border-color: rgba(255, 60, 60, 0.5);
+    background: rgba(255, 60, 60, 0.08);
+    color: #ff6a6a;
+    font-weight: 600;
+}
+.lr-pill--saving {
+    border-color: rgba(91, 140, 255, 0.5);
+    background: rgba(91, 140, 255, 0.08);
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.lr-dialog {
+    background: var(--bg-bar);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    width: 380px;
+}
+.lr-dialog--danger {
+    border-color: rgba(255, 60, 60, 0.4);
+}
+.lr-dialog__head {
+    height: var(--h-row);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--pad-2);
+    border-bottom: 1px solid var(--line);
+    font: 600 10px var(--font-mono);
+    letter-spacing: var(--track-micro);
+    color: var(--text-2);
+}
+.lr-dialog__body {
+    padding: 14px;
+}
+.lr-dialog__actions {
+    margin-top: var(--pad-4);
+    display: flex;
+    gap: var(--pad-1);
+    justify-content: flex-end;
+}
+.lr-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.9);
+    display: grid;
+    place-items: center;
+}
+
+.lr-empty {
+    padding: 22px var(--pad-3);
+    border: 1px dashed rgba(255, 255, 255, 0.14);
+    text-align: center;
+}
+.lr-empty__fact {
+    font: 400 var(--fs-body) var(--font-mono);
+    color: var(--text-3);
+}
+.lr-empty__hint {
+    margin-top: 5px;
+    font: 400 10.5px/1.5 var(--font-sans);
+    color: var(--text-4);
+}
+
+.lr-toast {
+    width: 262px;
+    padding: 9px 11px;
+    background: var(--bg-raised);
+    border: 1px solid var(--line-strong);
+    border-left: 2px solid var(--rec);
+}
+.lr-toast__title {
+    font: 600 11px var(--font-mono);
+    letter-spacing: 0.04em;
+    color: var(--text);
+}
+.lr-toast__detail {
+    margin-top: 4px;
+    font: 400 10px var(--font-mono);
+    color: var(--text-4);
+}
+
+/* video.js overrides — scrubber + markers, see DESIGN.md "Scrubber" */
+.video-js .vjs-progress-holder {
+    height: 3px;
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: var(--radius);
+}
+.video-js .vjs-play-progress {
+    background: var(--accent);
+}
+.video-js .vjs-play-progress::before {
+    display: none;
+}
+.vjs-marker {
+    width: 3px !important;
+    height: 15px !important;
+    border-radius: var(--radius) !important;
+    top: -6px !important;
+    opacity: 1 !important;
+}

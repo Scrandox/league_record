@@ -58,7 +58,7 @@ appEvent: "app-event"
 
 /** user-defined types **/
 
-export type AppEvent = { type: "RecordingsChanged"; payload: null } | { type: "MetadataChanged"; payload: string[] } | { type: "MarkerflagsChanged"; payload: null }
+export type AppEvent = { type: "RecordingsChanged"; payload: null } | { type: "MetadataChanged"; payload: string[] } | { type: "MarkerflagsChanged"; payload: null } | { type: "RecordingStateChanged"; payload: RecordingState }
 export type BuildingType = { buildingType: "INHIBITOR_BUILDING"; lane_type: LaneType } | { buildingType: "TOWER_BUILDING"; lane_type: LaneType; tower_type: TowerType }
 export type Deferred = { favorite: boolean; matchId: MatchId; ingameTimeRecStartOffset: number; highlights?: number[] }
 export type DragonType = "FIRE_DRAGON" | "EARTH_DRAGON" | "WATER_DRAGON" | "AIR_DRAGON" | "HEXTECH_DRAGON" | "CHEMTECH_DRAGON" | "ELDER_DRAGON"
@@ -74,6 +74,7 @@ export type Player = { gameName: string; tagLine: string; summonerId?: number | 
 export type Position = { x: number; y: number }
 export type Queue = { id: number; name: string; isRanked: boolean }
 export type Recording = { videoId: string; metadata: MetadataFile | null }
+export type RecordingState = "Idle" | "Recording" | "Saving"
 export type Runes = { primaryStyle: string; subStyle: string; perks: string[] }
 export type Stats = { kills: number; deaths: number; assists: number; largestMultiKill: number; neutralMinionsKilled: number; neutralMinionsKilledEnemyJungle: number; neutralMinionsKilledTeamJungle: number; totalMinionsKilled: number; visionScore: number; visionWardsBoughtInGame: number; wardsPlaced: number; wardsKilled: number; 
 /**

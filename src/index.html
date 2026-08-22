@@ -6,6 +6,8 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="icon" type="image/ico" href="favicon.ico" />
         <link rel="stylesheet" href="video.js/dist/video-js.min.css" />
+        <!-- tokens.css first: every other project stylesheet builds on it (see DESIGN.md) -->
+        <link rel="stylesheet" href="css/tokens.css" />
         <link rel="stylesheet" href="css/base.css" />
         <link rel="stylesheet" href="css/container.css" />
         <link rel="stylesheet" href="css/sidebar.css" />
@@ -15,59 +17,126 @@
     </head>
 
     <body>
-        <div id="modal">
+        <div id="modal" class="lr-backdrop">
             <div id="modal-content"></div>
         </div>
 
-        <div id="container">
-            <div id="sidebar">
-                <div id="sidebar-info">
-                    <button id="vid-folder-btn" class="btn">Open Video Folder</button>
-                    <p id="size">Size: <span id="size-inner">-</span> GB</p>
+        <div id="window" class="lr-window">
+            <header id="titlebar" class="lr-titlebar" data-tauri-drag-region>
+                <img src="assets/logo.svg" alt="" data-tauri-drag-region />
+                <span class="lr-wordmark" data-tauri-drag-region>LEAGUERECORD</span>
+                <span id="titlebar-context" data-tauri-drag-region></span>
+                <div class="spacer" data-tauri-drag-region></div>
+                <div id="window-controls">
+                    <button id="win-min" title="Minimize">&#x2013;</button>
+                    <button id="win-max" title="Maximize">&#x25A1;</button>
+                    <button id="win-close" title="Close">&#x2715;</button>
                 </div>
-                <ul id="sidebar-content"></ul>
-            </div>
+            </header>
 
-            <div id="main" class="hide-scrollbar">
-                <video id="video_player" class="video-js vjs-big-play-centered">
-                    <p class="vjs-no-js">Error: JavaScript not enabled</p>
-                </video>
-                <div id="description">
-                    <div id="description-left"></div>
-                    <div id="description-center"></div>
-                    <div id="description-right">
-                        <div id="marker-lists">
-                            <div class="marker-list">
-                                <input type="checkbox" id="kill" checked />
-                                <label for="kill"> Kills </label>
-                                <br />
-                                <input type="checkbox" id="death" checked />
-                                <label for="death"> Deaths </label>
-                                <br />
-                                <input type="checkbox" id="assist" checked />
-                                <label for="assist"> Assists </label>
-                                <br />
-                                <input type="checkbox" id="structure" checked />
-                                <label for="structure"> Structure </label>
-                            </div>
-                            <div class="marker-list">
-                                <input type="checkbox" id="dragon" checked />
-                                <label for="dragon"> Dragon </label>
-                                <br />
-                                <input type="checkbox" id="herald" checked />
-                                <label for="herald"> Herald </label>
-                                <br />
-                                <input type="checkbox" id="atakhan" checked />
-                                <label for="atakhan"> Atakhan </label>
-                                <br />
-                                <input type="checkbox" id="baron" checked />
-                                <label for="baron"> Baron </label>
-                            </div>
-                        </div>
-                        <button id="copy-timestamps-btn" class="btn">Timestamps</button>
-                    </div>
+            <nav id="cmdbar" class="lr-cmdbar">
+                <label id="search" class="lr-input">
+                    <span class="search-glyph">&#x2315;</span>
+                    <input
+                        id="search-input"
+                        type="text"
+                        placeholder="filter recordings"
+                        spellcheck="false"
+                        autocomplete="off"
+                    />
+                </label>
+                <div id="filter-tabs" class="lr-tabs">
+                    <button class="lr-tab" data-tab="all" aria-selected="true">ALL</button>
+                    <button class="lr-tab" data-tab="favorites" aria-selected="false">FAVORITES</button>
+                    <button class="lr-tab" data-tab="ranked" aria-selected="false">RANKED</button>
                 </div>
-            </div>
+                <div id="view-toggle" class="lr-tabs">
+                    <button id="view-list" class="lr-tab lr-tab--icon" aria-selected="true" title="List view">&#x25A4;</button>
+                    <button id="view-grid" class="lr-tab lr-tab--icon" aria-selected="false" title="Grid view">&#x25A6;</button>
+                </div>
+                <div class="spacer"></div>
+                <div id="state-pill" class="lr-pill" data-state="idle">
+                    <span class="lr-pill__dot"></span>
+                    <span id="state-pill-text">IDLE &#xB7; WAITING FOR GAME</span>
+                </div>
+                <button id="vid-folder-btn" class="lr-btn">FOLDER &#x2197;</button>
+            </nav>
+
+            <main id="app-body">
+                <div id="player-view">
+                    <div id="main" class="hide-scrollbar">
+                        <video id="video_player" class="video-js vjs-big-play-centered">
+                            <p class="vjs-no-js">Error: JavaScript not enabled</p>
+                        </video>
+                    </div>
+
+                    <aside id="sidebar">
+                        <div class="lr-table__head">
+                            <span>NAME</span>
+                            <span>R</span>
+                            <span class="num">K/D/A</span>
+                        </div>
+                        <ul id="sidebar-content" class="lr-table"></ul>
+                        <div id="sidebar-bottom">
+                            <div id="markers-head">
+                                <span class="lr-label">MARKERS</span>
+                                <span id="marker-count" class="lr-label"></span>
+                            </div>
+                            <div id="marker-lists">
+                                <label class="legend-item">
+                                    <input type="checkbox" id="kill" checked />
+                                    <span class="legend-swatch" style="color: var(--m-kill)"></span>
+                                    <span class="legend-name">Kills</span>
+                                </label>
+                                <label class="legend-item">
+                                    <input type="checkbox" id="dragon" checked />
+                                    <span class="legend-swatch" style="color: var(--m-dragon)"></span>
+                                    <span class="legend-name">Dragon</span>
+                                </label>
+                                <label class="legend-item">
+                                    <input type="checkbox" id="death" checked />
+                                    <span class="legend-swatch" style="color: var(--m-death)"></span>
+                                    <span class="legend-name">Deaths</span>
+                                </label>
+                                <label class="legend-item">
+                                    <input type="checkbox" id="herald" checked />
+                                    <span class="legend-swatch" style="color: var(--m-herald)"></span>
+                                    <span class="legend-name">Herald</span>
+                                </label>
+                                <label class="legend-item">
+                                    <input type="checkbox" id="assist" checked />
+                                    <span class="legend-swatch" style="color: var(--m-assist)"></span>
+                                    <span class="legend-name">Assists</span>
+                                </label>
+                                <label class="legend-item">
+                                    <input type="checkbox" id="atakhan" checked />
+                                    <span class="legend-swatch" style="color: var(--m-atakhan)"></span>
+                                    <span class="legend-name">Atakhan</span>
+                                </label>
+                                <label class="legend-item">
+                                    <input type="checkbox" id="structure" checked />
+                                    <span class="legend-swatch" style="color: var(--m-structure)"></span>
+                                    <span class="legend-name">Structure</span>
+                                </label>
+                                <label class="legend-item">
+                                    <input type="checkbox" id="baron" checked />
+                                    <span class="legend-swatch" style="color: var(--m-baron)"></span>
+                                    <span class="legend-name">Baron</span>
+                                </label>
+                            </div>
+                            <button id="copy-timestamps-btn" class="lr-btn lr-btn--accent-outline">TIMESTAMPS</button>
+                        </div>
+                    </aside>
+                </div>
+
+                <div id="grid-view" class="hidden"></div>
+            </main>
+
+            <footer id="statusbar" class="lr-statusbar">
+                <div id="status-meta"></div>
+                <div class="spacer"></div>
+                <span id="status-totals"></span>
+            </footer>
         </div>
     </body>
 </html>

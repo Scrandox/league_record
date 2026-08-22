@@ -12,7 +12,7 @@ use tokio_util::sync::CancellationToken;
 
 use riot_datatypes::MatchId;
 
-use crate::app::{action, AppEvent, EventManager, RecordingManager, SystemTrayManager};
+use crate::app::{action, AppEvent, EventManager, RecordingManager, RecordingState, SystemTrayManager};
 use crate::cancellable;
 use crate::recorder::Deferred;
 use crate::state::{CurrentlyRecording, SettingsWrapper};
@@ -101,11 +101,17 @@ impl RecordingTask {
             .state::<CurrentlyRecording>()
             .set(Some(output_filepath.clone()));
         ctx.app_handle.set_tray_menu_recording(true);
+        _ = ctx.app_handle.send_event(AppEvent::RecordingStateChanged {
+            payload: RecordingState::Recording,
+        });
 
         // if initial game_data is successful => start recording
         if let Err(e) = recorder.start_recording() {
             ctx.app_handle.state::<CurrentlyRecording>().set(None);
             ctx.app_handle.set_tray_menu_recording(false);
+            _ = ctx.app_handle.send_event(AppEvent::RecordingStateChanged {
+                payload: RecordingState::Idle,
+            });
 
             // if recording start failed stop recording just in case and retry next 'recorder loop
             let stop_recording = recorder.stop_recording();

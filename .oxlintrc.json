@@ -4,6 +4,7 @@
     "env": {
         "browser": true
     },
+    "ignorePatterns": ["design_handoff_console_ui/**"],
     "categories": {
         "correctness": "error",
         "perf": "warn",

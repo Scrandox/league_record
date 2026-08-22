@@ -1,33 +1,205 @@
-#container {
+/* window chrome + command bar + status bar + grid view — specs in DESIGN.md "Components" */
+
+/* ---- titlebar ---- */
+
+#titlebar img {
+    width: 16px;
+    height: 16px;
+}
+
+#titlebar-context {
+    font: 400 10px var(--font-mono);
+    color: var(--text-4);
+}
+
+#window-controls {
+    display: flex;
+    align-self: stretch;
+}
+
+#window-controls button {
+    width: 40px;
+    align-self: stretch;
+    font: 400 12px var(--font-mono);
+    color: var(--text-4);
+    transition: background var(--transition), color var(--transition);
+}
+
+#window-controls button:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text);
+}
+
+#win-close:hover {
+    background: var(--rec);
+    color: var(--on-accent);
+}
+
+/* ---- command bar ---- */
+
+#search {
+    width: 220px;
+}
+
+#search .search-glyph {
+    color: var(--text-4);
+}
+
+#search input {
+    flex: 1;
+    font: 400 var(--fs-body) var(--font-mono);
+}
+
+.lr-tab--icon {
+    width: var(--h-control);
+    padding: 0;
+    justify-content: center;
+    font-size: 12px;
+}
+
+/* state pill: [data-state] drives the same treatments as .lr-pill--rec / --saving */
+#state-pill[data-state="recording"] {
+    border-color: rgba(255, 60, 60, 0.5);
+    background: rgba(255, 60, 60, 0.08);
+    color: #ff6a6a;
+    font-weight: 600;
+}
+
+#state-pill[data-state="saving"] {
+    border-color: rgba(91, 140, 255, 0.5);
+    background: rgba(91, 140, 255, 0.08);
+    color: var(--accent);
+    font-weight: 600;
+}
+
+/* ---- body ---- */
+
+#app-body {
+    min-height: 0;
+    background: var(--bg-base);
+}
+
+#player-view {
     display: grid;
-    grid-template-columns: [sidebar] 325px [video] 1fr;
-    grid-template-rows: 100vh;
+    grid-template-columns: 1fr var(--sidebar-w);
+    height: 100%;
+    min-height: 0;
 }
 
-.btn {
-    --btn-disabled-color: lightslategray;
-    --btn-hover-color: white;
-    --btn-hover-background: #445fa5;
+/* ---- grid view ---- */
 
-    display: block;
-    width: 165px;
-    margin: 10px auto;
-    padding: 6px 12px;
-    border-radius: 5px;
-    background: var(--background-color);
-    color: var(--theme-color);
-    border: 2px solid var(--theme-color);
-    font-size: 1rem;
+#grid-view {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: var(--pad-2);
+    align-content: start;
+    padding: var(--pad-2);
+    height: 100%;
+    overflow-y: auto;
+    background: var(--bg-base);
+}
+
+.lr-card {
+    background: var(--bg-sunken);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    text-align: left;
     cursor: pointer;
+    transition: border-color var(--transition);
 }
 
-.btn:disabled {
-    color: var(--btn-disabled-color);
-    border-color: var(--btn-disabled-color);
+.lr-card:hover {
+    border-color: var(--line-strong);
 }
 
-.btn:hover:enabled {
-    border: 2px solid var(--btn-hover-color);
-    color: var(--btn-hover-color);
-    background: var(--btn-hover-background);
+.lr-card[aria-selected="true"] {
+    border-color: var(--accent);
+}
+
+.lr-card__thumb {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    background: var(--bg-raised);
+    border-bottom: 1px solid var(--line-soft);
+}
+
+.lr-card__badge {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    padding: 2px 5px;
+    font: 600 9px var(--font-mono);
+    letter-spacing: var(--track-micro);
+}
+
+.lr-card__badge[data-result="W"] {
+    color: var(--win);
+    background: rgba(95, 214, 122, 0.1);
+}
+
+.lr-card__badge[data-result="L"] {
+    color: var(--loss);
+    background: rgba(255, 90, 90, 0.1);
+}
+
+.lr-card__badge[data-result="R"],
+.lr-card__badge[data-result="-"] {
+    color: var(--neutral-result);
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.lr-card__fav {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    font-size: 11px;
+    color: var(--favorite);
+}
+
+.lr-card__body {
+    padding: 7px 8px;
+}
+
+.lr-card__name {
+    font: 400 11px var(--font-mono);
+    color: var(--text-2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.lr-card__meta {
+    margin-top: 3px;
+    font: 400 10px var(--font-mono);
+    color: var(--text-4);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ---- status bar ---- */
+
+#status-meta {
+    display: flex;
+    gap: 0;
+    align-items: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#statusbar .em {
+    color: var(--text);
+}
+
+#statusbar .win {
+    color: var(--win);
+}
+
+#statusbar .loss {
+    color: var(--loss);
+}
+
+#statusbar .remake {
+    color: var(--neutral-result);
 }

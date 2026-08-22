@@ -1,4 +1,4 @@
-import type { AppEvent } from "./bindings";
+import type { AppEvent } from "../bindings";
 import { listen, TauriEvent, type EventCallback, type UnlistenFn } from "@tauri-apps/api/event";
 
 export default class ListenerManager {

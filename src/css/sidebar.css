@@ -1,89 +1,164 @@
+/* recordings table + marker legend — specs in DESIGN.md "Table" and "Checkbox" */
+
 #sidebar {
-    display: grid;
-    grid-template-columns: 1fr;
-    grid-template-rows: [header] 1fr [list] 11fr;
-
-    border-right: 1px solid white;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    border-left: 1px solid var(--line);
+    background: var(--bg-sunken);
 }
 
-#sidebar #sidebar-info {
-    background: var(--background-color);
-    border-bottom: 1px solid white;
+#sidebar-content {
+    flex: 1;
+    overflow-y: auto;
 }
 
-#sidebar #sidebar-info #size {
-    text-align: center;
-    color: var(--theme-color);
+#sidebar-content .lr-empty {
+    margin: var(--pad-2);
 }
 
-#sidebar #sidebar-content {
-    margin: 0;
-    padding: 0;
-
-    list-style: none;
-    text-decoration: none;
-
-    font-size: 20px;
-    color: lightgray;
-    line-height: 22px;
-
-    overflow: auto;
-}
-
-#sidebar #sidebar-content li {
-    display: grid;
-    grid-template-columns: 1fr;
-
-    justify-items: start;
+.lr-row .video-name {
+    display: flex;
     align-items: center;
-
-    padding: 13px;
-    border-bottom: 1px solid lightgray;
-}
-
-#sidebar #sidebar-content li:hover {
-    grid-template-columns: 1fr 20px 25px 25px;
-    column-gap: 5px;
-
-    padding-right: 0;
-}
-
-#sidebar #sidebar-content li span.video-name {
-    width: 100%;
-
-    /* All 'white-space' and 'overflow' are required for 'text-overflow' to do anything */
+    gap: 6px;
     white-space: nowrap;
+    overflow: hidden;
+}
+
+.lr-row .video-name .name-text {
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-#sidebar #sidebar-content li:hover,
-#sidebar #sidebar-content li.active {
-    cursor: pointer;
-    color: white;
-    background-color: #445fa5;
+.lr-row .fav-mark {
+    color: var(--favorite);
+    flex: none;
 }
 
-#sidebar #sidebar-content li>span.favorite,
-#sidebar #sidebar-content li>span.rename,
-#sidebar #sidebar-content li>span.delete {
+.lr-row .result {
+    font-weight: 500;
+}
+
+.lr-row .result[data-result="W"] {
+    color: var(--win);
+}
+
+.lr-row .result[data-result="L"] {
+    color: var(--loss);
+}
+
+.lr-row .result[data-result="R"],
+.lr-row .result[data-result="-"] {
+    color: var(--neutral-result);
+}
+
+/* last column: K/D/A by default, action glyphs on hover / selection */
+.lr-row__end {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.lr-row .kda {
+    text-align: right;
+    color: var(--text-3);
+}
+
+.lr-row:hover .kda,
+.lr-row[aria-selected="true"] .kda {
     display: none;
 }
 
-#sidebar #sidebar-content li:hover>span.favorite,
-#sidebar #sidebar-content li:hover>span.rename,
-#sidebar #sidebar-content li:hover>span.delete {
-    display: block;
+.lr-row__actions button {
+    color: var(--text-3);
+    font-size: 11px;
+    transition: color var(--transition);
 }
 
-#sidebar #sidebar-content li>span:hover.favorite {
-    color: gold;
+.lr-row__actions button:hover {
+    color: var(--text);
 }
 
-#sidebar #sidebar-content li>span:hover.rename {
-    color: aqua;
+.lr-row__actions button.favorite:hover {
+    color: var(--favorite);
 }
 
-#sidebar #sidebar-content li>span:hover.delete {
-    color: red;
+.lr-row__actions button.delete:hover {
+    color: var(--loss);
+}
+
+.lr-row__actions button.favorite.active {
+    color: var(--favorite);
+}
+
+/* ---- marker legend ---- */
+
+#sidebar-bottom {
+    border-top: 1px solid var(--line);
+    padding: var(--pad-2);
+    background: var(--bg-sunken);
+}
+
+#markers-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 7px;
+}
+
+#marker-lists {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 10px;
+}
+
+/* no event data for this recording -> markers cannot apply */
+#marker-lists.disabled {
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font: 500 var(--fs-chrome) var(--font-mono);
+    letter-spacing: var(--track-chrome);
+    text-transform: uppercase;
+    color: var(--text-3);
+}
+
+.legend-item input {
+    appearance: none;
+    width: 11px;
+    height: 11px;
+    margin: 0;
+    border: 1px solid var(--line-strong);
+    background: transparent;
+    cursor: pointer;
+    flex: none;
+}
+
+.legend-item input:checked {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+.legend-swatch {
+    width: 7px;
+    height: 7px;
+    background: currentColor;
+    flex: none;
+}
+
+.legend-item input:not(:checked) ~ .legend-swatch,
+.legend-item input:not(:checked) ~ .legend-name {
+    opacity: 0.35;
+}
+
+#copy-timestamps-btn {
+    width: 100%;
+    justify-content: center;
+    margin-top: var(--pad-2);
 }

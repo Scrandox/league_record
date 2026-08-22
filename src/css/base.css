@@ -1,19 +1,84 @@
+/* fonts bundled locally so the app works offline (see DESIGN.md "Type") */
 @font-face {
-    font-family: "BeaufortW01-Bold";
-    src: url("BeaufortW01-Bold.ttf") format("truetype");
+    font-family: "IBM Plex Mono";
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+    src: url("fonts/IBMPlexMono-Regular.woff2") format("woff2");
+}
+@font-face {
+    font-family: "IBM Plex Mono";
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+    src: url("fonts/IBMPlexMono-Medium.woff2") format("woff2");
+}
+@font-face {
+    font-family: "IBM Plex Mono";
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+    src: url("fonts/IBMPlexMono-SemiBold.woff2") format("woff2");
+}
+@font-face {
+    font-family: "IBM Plex Sans";
+    font-weight: 400 600;
+    font-style: normal;
+    font-display: swap;
+    src: url("fonts/IBMPlexSans-Variable.woff2") format("woff2-variations");
 }
 
 * {
+    box-sizing: border-box;
     scrollbar-width: thin;
-    font-family: "BeaufortW01-Bold";
+    scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
 }
 
-html {
-    --theme-color: #a1b0d8;
-    --background-color: #2c2f3e;
-}
-
+html,
 body {
     margin: 0;
-    background: var(--background-color);
+    padding: 0;
+    height: 100%;
+    background: var(--bg-base);
+    font-family: var(--font-sans);
+    color: var(--text);
+    overflow: hidden;
+    user-select: none;
+}
+
+button {
+    font: inherit;
+    border: none;
+    background: none;
+    padding: 0;
+    color: inherit;
+    cursor: pointer;
+}
+
+input {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: none;
+    outline: none;
+    padding: 0;
+    min-width: 0;
+}
+
+input::placeholder {
+    color: var(--text-4);
+}
+
+ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.spacer {
+    flex: 1;
+}
+
+.hidden {
+    display: none !important;
 }

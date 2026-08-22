@@ -35,6 +35,8 @@ impl WindowManager for AppHandle {
             let window_builder = WebviewWindow::builder(self, window, WebviewUrl::default())
                 .title(APP_NAME)
                 .visible(false)
+                // the frontend renders its own titlebar (see DESIGN.md "Titlebar")
+                .decorations(false)
                 .min_inner_size(1080.0, 600.0)
                 .inner_size(size.0, size.1);
 

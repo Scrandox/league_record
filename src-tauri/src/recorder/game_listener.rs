@@ -16,7 +16,7 @@ use tokio_util::sync::CancellationToken;
 use super::highlight_task::HighlightTask;
 use super::metadata;
 use super::recording_task::{GameCtx, Metadata, RecordingTask};
-use crate::app::{action, AppEvent, EventManager};
+use crate::app::{action, AppEvent, EventManager, RecordingState};
 use crate::cancellable;
 use crate::recorder::{GameMetadata, MetadataFile};
 use crate::state::SettingsWrapper;
@@ -108,6 +108,9 @@ impl GameListener {
         if let State::Recording(recording_task, highlight_task) = std::mem::take(&mut self.state) {
             _ = recording_task.stop().await;
             _ = highlight_task.stop().await;
+            _ = self.ctx.app_handle.send_event(AppEvent::RecordingStateChanged {
+                payload: RecordingState::Idle,
+            });
         }
 
         Ok(())
@@ -143,7 +146,15 @@ impl GameListener {
 
                     // make sure the task stops e.g. maybe IngameAPI didn't start => caught in waiting for game loop
                     let highlight_data = highlight_task.stop().await;
-                    match recording_task.stop().await {
+                    let stop_result = recording_task.stop().await;
+                    _ = self.ctx.app_handle.send_event(AppEvent::RecordingStateChanged {
+                        payload: if stop_result.is_ok() {
+                            RecordingState::Saving
+                        } else {
+                            RecordingState::Idle
+                        },
+                    });
+                    match stop_result {
                         Ok(metadata) => {
                             let mut metadata_filepath = metadata.output_filepath.clone();
                             metadata_filepath.set_extension("json");
@@ -238,6 +249,10 @@ impl GameListener {
                                 log::error!("GameListener failed to send event: {e}");
                             }
                         }
+
+                        _ = ctx.app_handle.send_event(AppEvent::RecordingStateChanged {
+                            payload: RecordingState::Idle,
+                        });
                     });
 
                     State::Idle

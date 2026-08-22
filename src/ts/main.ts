@@ -3,9 +3,11 @@ import type Player from "video.js/dist/types/player";
 import { type MarkerOptions, MarkersPlugin, type Settings } from "@fffffffxxxxxxx/videojs-markers";
 
 import { convertFileSrc } from "@tauri-apps/api/core";
+import { getVersion } from "@tauri-apps/api/app";
 import { join, sep } from "@tauri-apps/api/path";
+import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 
-import { commands, type GameEvent, type MarkerFlags } from "./bindings";
+import { commands, type GameEvent, type MarkerFlags, type RecordingState } from "../bindings";
 import ListenerManager from "./listeners";
 import UI from "./ui";
 import { splitRight, UnreachableError } from "./util";
@@ -14,7 +16,7 @@ import { splitRight, UnreachableError } from "./util";
 // jumps to (eventTime - EVENT_DELAY) when a marker is clicked
 const EVENT_DELAY = 2;
 
-const ui = new UI(videojs);
+const ui = new UI();
 
 type RecordingEvents = {
     participantId: number;
@@ -55,16 +57,29 @@ async function main() {
     // disable right click menu
     addEventListener("contextmenu", (event) => event.preventDefault());
 
-    // configure and start marker plugin
+    // window controls for the frameless window (see DESIGN.md "Titlebar")
+    const appWindow = getCurrentWebviewWindow();
+    document.querySelector("#win-min")?.addEventListener("click", () => void appWindow.minimize());
+    document.querySelector("#win-max")?.addEventListener("click", () => void appWindow.toggleMaximize());
+    document.querySelector("#win-close")?.addEventListener("click", () => void appWindow.close());
+
+    getVersion().then((version) => {
+        const context = document.querySelector("#titlebar-context");
+        if (context) context.textContent = `v${version}`;
+    });
+
+    ui.setStatusMessage("NO RECORDING SELECTED");
+
+    // configure and start marker plugin (3px square bars, see DESIGN.md "Scrubber")
     player.markers({
         markerTip: {
             display: true,
             innerHtml: (marker) => marker.text ?? "",
         },
         markerStyle: {
-            minWidth: "6px",
-            maxWidth: "16px",
-            borderRadius: "0%",
+            minWidth: "3px",
+            maxWidth: "3px",
+            borderRadius: "0",
         },
     });
 
@@ -72,7 +87,8 @@ async function main() {
         // if src is a blank string that means no recording is selected
         if (src === "") {
             player.markers().removeAll();
-            ui.setVideoDescription("", "No recording selected!");
+            ui.setMarkerCount(0);
+            ui.setStatusMessage("NO RECORDING SELECTED");
             ui.setActiveVideoId(null);
 
             // make sure the bigplaybutton and controlbar are hidden
@@ -120,6 +136,7 @@ async function main() {
             setMetadata(activeVideoId);
         }
     });
+    listenerManager.listen_app("RecordingStateChanged", ({ payload }) => setRecordingState(payload));
 
     // load data
     commands.getMarkerFlags().then(ui.setMarkerFlags);
@@ -175,7 +192,7 @@ async function setMetadata(videoId: string) {
     const data = await commands.getMetadata(videoId);
     if (data && "Metadata" in data) {
         ui.showMarkerFlags(true);
-        ui.setVideoDescriptionMetadata(data.Metadata);
+        ui.setStatusMetadata(data.Metadata);
         currentEvents = {
             participantId: data.Metadata.participantId,
             recordingOffset: data.Metadata.ingameTimeRecStartOffset,
@@ -187,7 +204,7 @@ async function setMetadata(videoId: string) {
         };
     } else if (data && "Deferred" in data) {
         ui.showMarkerFlags(false);
-        ui.setVideoDescription("", "No Data");
+        ui.setStatusMessage("NO MATCH DATA");
         currentEvents = null;
         highlightEvents = {
             recordingOffset: data.Deferred.ingameTimeRecStartOffset,
@@ -195,7 +212,7 @@ async function setMetadata(videoId: string) {
         };
     } else {
         ui.showMarkerFlags(false);
-        ui.setVideoDescription("", "No Data");
+        ui.setStatusMessage("NO MATCH DATA");
         currentEvents = null;
         highlightEvents = null;
     }
@@ -227,6 +244,45 @@ function changeMarkers() {
 
     player.markers().removeAll();
     player.markers().add(markers);
+    ui.setMarkerCount(markers.length);
+}
+
+// --- RECORDING STATE PILL ---
+
+let recordingStartedAt: number | null = null;
+let recordingTimer: ReturnType<typeof setInterval> | null = null;
+
+function setRecordingState(state: RecordingState) {
+    if (recordingTimer !== null) {
+        clearInterval(recordingTimer);
+        recordingTimer = null;
+    }
+
+    switch (state) {
+        case "Recording": {
+            // no start timestamp in the event, so count from receipt - close enough for a status pill
+            recordingStartedAt = Date.now();
+            const tick = () => {
+                const secs = Math.floor((Date.now() - (recordingStartedAt ?? Date.now())) / 1000);
+                const mm = Math.floor(secs / 60)
+                    .toString()
+                    .padStart(2, "0");
+                const ss = (secs % 60).toString().padStart(2, "0");
+                ui.setRecordingState("Recording", `${mm}:${ss}`);
+            };
+            tick();
+            recordingTimer = setInterval(tick, 1000);
+            break;
+        }
+        case "Saving":
+            ui.setRecordingState("Saving", "MATCH DATA");
+            break;
+        case "Idle":
+            ui.setRecordingState("Idle", "WAITING FOR GAME");
+            break;
+        default:
+            throw new UnreachableError(state);
+    }
 }
 
 type EventType =
@@ -362,11 +418,11 @@ async function deleteVideo(videoId: string) {
 }
 
 function showTimestamps() {
-    const timelineEvents = new Array<{ timestamp: number; text: string }>();
+    const timelineEvents = new Array<{ timestamp: number; name: string; markerClass: string }>();
 
     if (highlightEvents !== null) {
         for (const event of highlightEvents.events) {
-            timelineEvents.push({ timestamp: event, text: `${formatTimestamp(event)} Highlight` });
+            timelineEvents.push({ timestamp: event, name: "Highlight", markerClass: "highlight" });
         }
     }
 
@@ -374,29 +430,15 @@ function showTimestamps() {
         for (const event of currentEvents.events) {
             const name = eventName(event, currentEvents.participantId, null);
             if (name !== null) {
-                const text = `${formatTimestamp(event.timestamp)} ${name}`;
-                const timestamp = event.timestamp;
-                timelineEvents.push({ timestamp, text });
+                timelineEvents.push({ timestamp: event.timestamp, name, markerClass: name.toLowerCase() });
             }
         }
     }
 
     ui.showTimelineModal(
         timelineEvents.toSorted((a, b) => a.timestamp - b.timestamp),
-        (secs) => player.currentTime(secs / 1000 - EVENT_DELAY),
+        (millis) => player.currentTime(millis / 1000 - EVENT_DELAY),
     );
-}
-
-function formatTimestamp(timestamp: number): string {
-    let secs = timestamp / 1000;
-
-    let minutes = Math.floor(secs / 60);
-    secs -= minutes * 60;
-
-    const hours = Math.floor(minutes / 60);
-    minutes -= hours * 60;
-
-    return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${Math.floor(secs).toString().padStart(2, "0")}`;
 }
 
 // --- KEYBOARD SHORTCUTS ---
