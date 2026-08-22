@@ -46,6 +46,10 @@ const player = videojs("video_player", VIDEO_JS_OPTIONS) as Player & {
 
 console.log(MarkersPlugin);
 
+// safety net: the window is created invisible and only shown when the player is ready,
+// so if anything in main() throws or stalls the window would stay hidden forever
+setTimeout(ui.showWindow, 3000);
+
 await main();
 async function main() {
     // disable right click menu
@@ -125,6 +129,9 @@ async function main() {
     if (firstVideo) {
         void setVideo(firstVideo.videoId);
         player.one("canplay", ui.showWindow);
+        // if the first video can't be loaded (corrupt, locked or deleted file)
+        // 'canplay' never fires - show the window anyway
+        player.one("error", ui.showWindow);
     } else {
         void setVideo(null);
         player.one("ready", ui.showWindow);
