@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# fetched by scripts/fetch-ffmpeg.ps1, bundled as a resource - too big for git
+src-tauri/bin/ffmpeg.exe
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

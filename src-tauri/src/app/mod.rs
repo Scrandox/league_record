@@ -1,11 +1,14 @@
+mod clips;
 mod event;
 mod manager;
 mod recordings;
 mod system_tray;
 mod window;
 
+pub use clips::{ClipPlan, ClipProgress, ClipSelection};
 pub use event::{AppEvent, EventManager, RecordingState};
 pub use manager::AppManager;
+pub use clips::{clips_dir, create as create_clips, plan as plan_clips};
 pub use recordings::{action, RecordingManager};
 pub use system_tray::SystemTrayManager;
 pub use window::{AppWindow, WindowManager};

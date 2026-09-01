@@ -91,7 +91,8 @@ pub fn replace(app_handle: &AppHandle, recordings_path: &Path) {
 
     match watcher {
         Ok(mut watcher) => {
-            _ = watcher.watch(recordings_path, notify::RecursiveMode::NonRecursive);
+            // recursive so clips written into '<recordings>/Clips' show up in the app immediately
+            _ = watcher.watch(recordings_path, notify::RecursiveMode::Recursive);
 
             // store Watcher so it doesn't drop and stop watching
             // also drop old watcher

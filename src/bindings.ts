@@ -40,6 +40,22 @@ async confirmDelete() : Promise<boolean> {
 },
 async disableConfirmDelete() : Promise<void> {
     await TAURI_INVOKE("disable_confirm_delete");
+},
+async planClips(videoId: string, selection: ClipSelection) : Promise<Result<ClipPlan[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("plan_clips", { videoId, selection }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async createClips(videoId: string, selection: ClipSelection) : Promise<Result<string[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("create_clips", { videoId, selection }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -58,8 +74,32 @@ appEvent: "app-event"
 
 /** user-defined types **/
 
-export type AppEvent = { type: "RecordingsChanged"; payload: null } | { type: "MetadataChanged"; payload: string[] } | { type: "MarkerflagsChanged"; payload: null } | { type: "RecordingStateChanged"; payload: RecordingState }
+export type AppEvent = { type: "RecordingsChanged"; payload: null } | { type: "MetadataChanged"; payload: string[] } | { type: "MarkerflagsChanged"; payload: null } | { type: "RecordingStateChanged"; payload: RecordingState } | { type: "ClipProgress"; payload: ClipProgress }
 export type BuildingType = { buildingType: "INHIBITOR_BUILDING"; lane_type: LaneType } | { buildingType: "TOWER_BUILDING"; lane_type: LaneType; tower_type: TowerType }
+/**
+ * one clip that would be cut - the frontend shows these before anything is written
+ */
+export type ClipPlan = { 
+/**
+ * seconds into the source recording
+ */
+start: number; end: number; 
+/**
+ * when the first event inside the clip happened, in seconds into the source recording
+ */
+eventTime: number; 
+/**
+ * human label built from the events inside, e.g. `KILL x2 + ASSIST`
+ */
+label: string; eventCount: number }
+/**
+ * progress of a running Auto-Clip run, one event per finished clip
+ */
+export type ClipProgress = { done: number; total: number }
+/**
+ * which event types the user wants clipped - the same seven categories as the marker legend
+ */
+export type ClipSelection = { kill: boolean; death: boolean; assist: boolean; structure: boolean; dragon: boolean; herald: boolean; baron: boolean }
 export type Deferred = { favorite: boolean; matchId: MatchId; ingameTimeRecStartOffset: number; highlights?: number[] }
 export type DragonType = "FIRE_DRAGON" | "EARTH_DRAGON" | "WATER_DRAGON" | "AIR_DRAGON" | "HEXTECH_DRAGON" | "CHEMTECH_DRAGON" | "ELDER_DRAGON"
 export type GameEvent = ({ ChampionKill: { victim_id: number; killer_id: number; assisting_participant_ids: number[]; position: Position } } | { BuildingKill: { team_id: Team; killer_id: number; building_type: BuildingType; assisting_participant_ids: number[] } } | { EliteMonsterKill: { killer_id: number; monster_type: MonsterType; assisting_participant_ids: number[] } }) & { timestamp: number }

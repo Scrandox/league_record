@@ -5,7 +5,8 @@ use std::process::Command;
 
 use tauri::{AppHandle, State};
 
-use crate::app::{action, RecordingManager};
+use crate::app::{self, action, ClipPlan, ClipSelection, RecordingManager};
+use crate::constants::CLIPS_FOLDER;
 use crate::recorder::MetadataFile;
 use crate::state::{MarkerFlags, SettingsFile, SettingsWrapper};
 use crate::util::compare_time;
@@ -37,7 +38,7 @@ pub fn get_recordings_path(settings: State<SettingsWrapper>) -> PathBuf {
 #[tauri::command]
 pub fn get_recordings_size(app_handle: AppHandle) -> f32 {
     let mut size = 0;
-    for file in app_handle.get_recordings() {
+    for file in app_handle.get_recordings().into_iter().chain(app_handle.get_clips()) {
         if let Ok(metadata) = metadata(file) {
             size += metadata.len();
         }
@@ -56,20 +57,58 @@ pub struct Recording {
 #[cfg_attr(test, specta::specta)]
 #[tauri::command]
 pub fn get_recordings_list(app_handle: AppHandle) -> Vec<Recording> {
-    let mut recordings = app_handle.get_recordings();
-    // sort by time created (index 0 is newest)
-    recordings.sort_by(|a, b| compare_time(a, b).unwrap_or(Ordering::Equal));
-    let mut ret = Vec::new();
-    for path in recordings {
-        if let Some(video_id) = path
-            .file_name()
-            .and_then(|fname| fname.to_os_string().into_string().ok())
-        {
-            let metadata = action::get_recording_metadata(&path, true).ok();
-            ret.push(Recording { video_id, metadata });
+    fn collect(paths: Vec<PathBuf>, prefix: Option<&str>, into: &mut Vec<Recording>) {
+        let mut paths = paths;
+        // sort by time created (index 0 is newest)
+        paths.sort_by(|a, b| compare_time(a, b).unwrap_or(Ordering::Equal));
+
+        for path in paths {
+            if let Some(file_name) = path
+                .file_name()
+                .and_then(|fname| fname.to_os_string().into_string().ok())
+            {
+                // clips are addressed as 'Clips/<filename>' so one string still identifies any video
+                let video_id = match prefix {
+                    Some(prefix) => format!("{prefix}/{file_name}"),
+                    None => file_name,
+                };
+                let metadata = action::get_recording_metadata(&path, true).ok();
+                into.push(Recording { video_id, metadata });
+            }
         }
     }
+
+    let mut ret = Vec::new();
+    collect(app_handle.get_recordings(), None, &mut ret);
+    collect(app_handle.get_clips(), Some(CLIPS_FOLDER), &mut ret);
     ret
+}
+
+#[cfg_attr(test, specta::specta)]
+#[tauri::command]
+pub fn plan_clips(video_id: String, selection: ClipSelection, app_handle: AppHandle) -> Result<Vec<ClipPlan>, String> {
+    app::plan_clips(&app_handle, &video_id, selection).map_err(|e| {
+        log::error!("failed to plan clips for {video_id}: {e}");
+        e.to_string()
+    })
+}
+
+#[cfg_attr(test, specta::specta)]
+#[tauri::command]
+pub async fn create_clips(
+    video_id: String,
+    selection: ClipSelection,
+    app_handle: AppHandle,
+) -> Result<Vec<String>, String> {
+    // cutting is blocking work (one ffmpeg process per clip) - keep it off the async runtime
+    tauri::async_runtime::spawn_blocking(move || {
+        app::create_clips(&app_handle, &video_id, selection).map_err(|e| {
+            log::error!("failed to create clips for {video_id}: {e}");
+            e.to_string()
+        })
+    })
+    .await
+    .map_err(|e| format!("clip task failed: {e}"))?
 }
 
 #[cfg_attr(test, specta::specta)]

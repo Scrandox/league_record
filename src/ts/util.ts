@@ -1,7 +1,16 @@
 import type { MetadataFile } from "../bindings";
 
+// clips created by Auto-Clip live in a subfolder of the recordings folder and are addressed
+// as 'Clips/<filename>.mp4' - the folder is part of the id, never part of the displayed name
+export const CLIPS_FOLDER = "Clips";
+
+export function isClip(videoId: string): boolean {
+    return videoId.startsWith(`${CLIPS_FOLDER}/`);
+}
+
 export function toVideoName(videoId: string): string {
-    return videoId.slice(0, videoId.lastIndexOf("."));
+    const fileName = splitRight(videoId, "/");
+    return fileName.slice(0, fileName.lastIndexOf("."));
 }
 
 export function toVideoId(videoName: string): string {
@@ -16,11 +25,6 @@ export function isFavorite(metadataFile: MetadataFile | null): boolean {
     if (!metadataFile) return false;
     if ("Metadata" in metadataFile) return metadataFile.Metadata.favorite;
     if ("Deferred" in metadataFile) return metadataFile.Deferred.favorite;
-    return false;
-}
-
-export function isRanked(metadataFile: MetadataFile | null): boolean {
-    if (metadataFile && "Metadata" in metadataFile) return metadataFile.Metadata.queue.isRanked;
     return false;
 }
 

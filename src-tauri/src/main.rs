@@ -48,7 +48,9 @@ fn main() {
             commands::get_metadata,
             commands::toggle_favorite,
             commands::confirm_delete,
-            commands::disable_confirm_delete
+            commands::disable_confirm_delete,
+            commands::plan_clips,
+            commands::create_clips
         ])
         .setup(|app| app.app_handle().setup().map_err(anyhow::Error::into))
         .build(tauri::generate_context!());

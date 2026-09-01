@@ -10,7 +10,7 @@ import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { commands, type GameEvent, type MarkerFlags, type RecordingState } from "../bindings";
 import ListenerManager from "./listeners";
 import UI from "./ui";
-import { splitRight, UnreachableError } from "./util";
+import { CLIPS_FOLDER, isClip, splitRight, toVideoId, toVideoName, UnreachableError } from "./util";
 
 // sets the time a marker jumps to before the actual event happens
 // jumps to (eventTime - EVENT_DELAY) when a marker is clicked
@@ -96,10 +96,9 @@ async function main() {
             player.controls(false);
         } else {
             // split src ('https://asset.localhost/{path_to_file}') at the last '/' to get the video path from the src
-            // to get the videoId split path/to/file.mp4 at the last directory separator which can be '/' or '\' (=> sep)
-            // since videoId has to be a valid filename and filenames can't contain '/' this works always
+            // the videoId is that path relative to the recordings folder, so a clip keeps its 'Clips/' prefix
             const videoPath = decodeURIComponent(splitRight(src, "/"));
-            const videoId = splitRight(videoPath, sep());
+            const videoId = toVideoIdFromPath(videoPath);
             ui.setActiveVideoId(videoId);
             setMetadata(videoId);
 
@@ -137,11 +136,12 @@ async function main() {
         }
     });
     listenerManager.listen_app("RecordingStateChanged", ({ payload }) => setRecordingState(payload));
+    listenerManager.listen_app("ClipProgress", ({ payload }) => ui.setClipProgress(payload.done, payload.total));
 
     // load data
     commands.getMarkerFlags().then(ui.setMarkerFlags);
 
-    const recordingsPath = await commands.getRecordingsPath();
+    recordingsPath = await commands.getRecordingsPath();
     ui.setThumbnailSrcResolver((videoId) => convertFileSrc(recordingsPath + sep() + videoId));
 
     const videoIds = await updateSidebar();
@@ -158,6 +158,19 @@ async function main() {
     }
 }
 
+// the recordings folder, cached so the sourceset handler can turn a path back into a videoId
+let recordingsPath = "";
+
+// 'C:\...\Recordings\Clips\x.mp4' => 'Clips/x.mp4', 'C:\...\Recordings\game.mp4' => 'game.mp4'
+function toVideoIdFromPath(videoPath: string): string {
+    const separator = sep();
+    if (recordingsPath !== "" && videoPath.startsWith(recordingsPath)) {
+        return videoPath.slice(recordingsPath.length).replace(/^[/\\]+/, "").split(separator).join("/");
+    }
+    // no recordings path yet - a bare filename is still right for everything outside Clips
+    return splitRight(videoPath, separator);
+}
+
 // --- SIDEBAR, VIDEO PLAYER, DESCRIPTION  ---
 
 // use this function to update the sidebar
@@ -168,7 +181,15 @@ async function updateSidebar() {
         commands.getRecordingsList(),
         commands.getRecordingsSize(),
     ]);
-    ui.updateSideBar(recordingsSize, recordings, setVideo, commands.toggleFavorite, showRenameModal, showDeleteModal);
+    ui.updateSideBar(
+        recordingsSize,
+        recordings,
+        setVideo,
+        commands.toggleFavorite,
+        showRenameModal,
+        showDeleteModal,
+        showAutoClipModal,
+    );
 
     if (!ui.setActiveVideoId(activeVideoId)) {
         void setVideo(null);
@@ -186,8 +207,8 @@ async function setVideo(videoId: string | null) {
     if (videoId === null) {
         player.src("");
     } else {
-        const recordingsPath = await commands.getRecordingsPath();
-        player.src({ type: "video/mp4", src: convertFileSrc(await join(recordingsPath, videoId)) });
+        const folder = recordingsPath !== "" ? recordingsPath : await commands.getRecordingsPath();
+        player.src({ type: "video/mp4", src: convertFileSrc(await join(folder, videoId)) });
     }
 }
 
@@ -378,10 +399,21 @@ function createMarker(timestamp: number, recordingOffset: number, eventType: Eve
 // --- MODAL ---
 
 async function showRenameModal(videoId: string) {
-    ui.showRenameModal(
+    // a clip can share a name with a full game - they live in different folders, so only
+    // names from the same folder can actually collide
+    const clip = isClip(videoId);
+    const takenNames = (await commands.getRecordingsList())
+        .filter((r) => isClip(r.videoId) === clip)
+        .map((r) => toVideoId(toVideoName(r.videoId)));
+
+    ui.showRenameModal(videoId, takenNames, renameVideo);
+}
+
+function showAutoClipModal(videoId: string) {
+    ui.showAutoClipModal(
         videoId,
-        (await commands.getRecordingsList()).map((r) => r.videoId),
-        renameVideo,
+        (selection) => commands.planClips(videoId, selection),
+        (selection) => commands.createClips(videoId, selection),
     );
 }
 
@@ -391,9 +423,11 @@ async function renameVideo(videoId: string, newVideoId: string) {
     const ok = await commands.renameVideo(videoId, newVideoId);
     if (ok) {
         if (videoId === activeVideoId) {
+            // the file never leaves its folder, so a renamed clip keeps its 'Clips/' prefix
+            const newId = isClip(videoId) ? `${CLIPS_FOLDER}/${newVideoId}` : newVideoId;
             const time = player.currentTime()!;
             void updateSidebar();
-            setVideo(newVideoId).then(() => player.currentTime(time));
+            setVideo(newId).then(() => player.currentTime(time));
         }
     } else {
         ui.showErrorModal("Error renaming video!");

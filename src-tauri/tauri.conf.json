@@ -21,6 +21,7 @@
     "targets": ["nsis"],
     "resources": {
       "target/libobs": "libobs",
+      "bin/ffmpeg.exe": "ffmpeg.exe",
       "../licenses/*": "licenses/",
       "../LICENSE.txt": "LICENSE.txt"
     },

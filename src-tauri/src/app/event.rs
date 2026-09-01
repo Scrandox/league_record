@@ -17,6 +17,7 @@ pub enum AppEvent {
     MetadataChanged { payload: Vec<String> },
     MarkerflagsChanged { payload: () },
     RecordingStateChanged { payload: RecordingState },
+    ClipProgress { payload: crate::app::ClipProgress },
 }
 
 pub trait EventManager {
@@ -40,6 +41,9 @@ impl EventManager for tauri::AppHandle {
                 self.emit_to(EventTarget::webview_window(AppWindow::Main), (&event).into(), payload)?
             }
             RecordingStateChanged { payload } => {
+                self.emit_to(EventTarget::webview_window(AppWindow::Main), (&event).into(), payload)?
+            }
+            ClipProgress { payload } => {
                 self.emit_to(EventTarget::webview_window(AppWindow::Main), (&event).into(), payload)?
             }
         };

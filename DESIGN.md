@@ -34,7 +34,8 @@ sparingly enough that it always means "this is selected or active".
    a tool someone opens for thirty seconds.
 9. **No motion.** 120ms color and border-color transitions on hover only. Nothing slides,
    fades, scales or spins. A spinner is a text percentage instead.
-10. **Icons are text.** `▶ ⏴ ⏵ 🔊 ⛶ ⌕ ★ ✎ ✕ ↵ ▤ ▦ ↗ ▾` at 11–13px. If a real icon set gets
+10. **Icons are text.** `▶ ⏴ ⏵ ⛶ ⌕ ★ ✎ ✕ ↵ ▤ ▦ ↗ ▾`, plus `U+1F50A` (volume) and `U+2702`
+    (scissors, Auto-Clip), at 11–13px. If a real icon set gets
     added later, it must be a single-weight monoline set — no filled or duotone icons.
 11. **Empty and error states are typographic.** A mono line stating the fact, one sans line of
     guidance, inside a dashed hairline box. No illustrations.
@@ -150,6 +151,13 @@ grid with 10px gaps. A future settings screen should use `grid-template-columns:
 Never let the video pane shrink to add chrome. If a new panel needs room, put it in the 320px
 column, in the status bar, or in a dialog.
 
+Auto-Clip output lives in a `Clips` subfolder of the recordings folder and shares the library
+with full games — one list, one player, one set of row actions, separated by the `FULL GAME`
+and `CLIPS` tabs rather than by a second screen. A clip carries its folder in its id
+(`Clips/name.mp4`), so it displays under its bare filename everywhere a name is shown. Clips
+count toward the size total in the status bar but are never removed by the age or size
+cleanups: the user chose each one by hand.
+
 ## Components
 
 **Titlebar** — 34px, `--bg-base`, bottom `--line`. App icon 16px, wordmark, then a faint mono
@@ -165,7 +173,9 @@ New global actions belong here, right-aligned, as 26px outlined buttons.
 
 **Filter tabs** — joined group, 1px gaps, no radius. Active: `--accent` fill, `--on-accent`
 text, weight 600. Inactive: `--bg-raised`, `--text-3`, weight 500. Counts are part of the
-label (`ALL 42`).
+label (`ALL 42`). The four tabs are `ALL`, `FAVORITES`, `FULL GAME` and `CLIPS`; the last two
+split the library by kind, since a clip and the game it came from are different things to
+look for. Filtering stays in the frontend — the tabs never re-query the backend.
 
 **Segmented icon toggle** — 26×26px squares, same active/inactive treatment as tabs.
 
@@ -206,6 +216,15 @@ a 7×7px square dot. Recording uses `--rec`, saving `--accent`, idle `--line-str
 **Dialog** — `--bg-bar` box, 1px `--line-strong` (`--rec` at 40% for destructive), no radius,
 no shadow. 30px header: micro caps title left, `✕` right, bottom hairline. 14px body. Actions
 bottom-right, 6px gaps, cancel then primary. Backdrop is `--bg-base` at 90%. Width 320–420px.
+
+**Auto-Clip dialog** — a `Dialog` at the narrow end of the width range, opened from the `U+2702`
+row action. Body is `.lr-clip-categories`: a two-column grid, 6px row gap and `--pad-2` column
+gap, of the same `.legend-item` checkbox rows the marker legend uses, so a category reads with
+its own `--m-*` swatch and never a second color. Below it `.lr-clip-summary` — hairline top
+border, `--pad-1` of clearance, Mono 500 `--fs-time` `--text` — restating the plan as
+`N CLIPS · MM:SS TOTAL`, recomputed on every toggle. During the cut the same line becomes
+`CLIPPING · 3/12` and every control in the dialog is disabled; a failure replaces it with the
+error text and re-enables them. Actions are CANCEL then CREATE CLIPS.
 
 **Toast** — `--bg-raised`, 1px `--line-strong`, 2px left border in the relevant semantic color,
 9px/11px padding, ~262px wide. Mono 600 11px title line, Mono 400 10px `--text-4` detail. One

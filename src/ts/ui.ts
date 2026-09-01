@@ -1,8 +1,17 @@
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import * as clipboard from "@tauri-apps/plugin-clipboard-manager";
 
-import { commands, type GameMetadata, type MarkerFlags, type Recording, type RecordingState } from "../bindings";
-import { toVideoId, toVideoName, isFavorite, isRanked, resultOf, kdaOf, championOf } from "./util";
+import {
+    commands,
+    type ClipPlan,
+    type ClipSelection,
+    type GameMetadata,
+    type MarkerFlags,
+    type Recording,
+    type RecordingState,
+    type Result,
+} from "../bindings";
+import { toVideoId, toVideoName, isClip, isFavorite, resultOf, kdaOf, championOf } from "./util";
 
 const appWindow = getCurrentWebviewWindow();
 
@@ -11,11 +20,34 @@ const STAR = "\u2605";
 const STAR_OUTLINE = "\u2606";
 const PENCIL = "\u270E";
 const CROSS = "\u2715";
+const SCISSORS = "\u2702";
 const DOT = " \u00B7 ";
 const DASH = "\u2013";
 
-type FilterTab = "all" | "favorites" | "ranked";
+type FilterTab = "all" | "favorites" | "full-game" | "clips";
 type ViewMode = "list" | "grid";
+
+const TAB_LABEL: Record<FilterTab, string> = {
+    all: "ALL",
+    favorites: "FAVORITES",
+    "full-game": "FULL GAME",
+    clips: "CLIPS",
+};
+
+// mirrors CLIP_LEAD_IN_SECS / CLIP_LEAD_OUT_SECS in src-tauri/src/constants.rs - display only
+const CLIP_LEAD_IN = 30;
+const CLIP_LEAD_OUT = 15;
+
+// the seven event categories Auto-Clip can cut on, in legend order
+const CLIP_CATEGORIES: ReadonlyArray<{ key: keyof ClipSelection; name: string; token: string }> = [
+    { key: "kill", name: "Kills", token: "--m-kill" },
+    { key: "death", name: "Deaths", token: "--m-death" },
+    { key: "assist", name: "Assists", token: "--m-assist" },
+    { key: "baron", name: "Barons", token: "--m-baron" },
+    { key: "dragon", name: "Dragons", token: "--m-dragon" },
+    { key: "herald", name: "Heralds", token: "--m-herald" },
+    { key: "structure", name: "Structures", token: "--m-structure" },
+];
 
 type TimelineEvent = { timestamp: number; name: string; markerClass: string };
 
@@ -93,10 +125,14 @@ export default class UI {
     // resolves a videoId to a playable URL for grid thumbnails (set once main.ts knows the recordings path)
     private thumbnailSrc: ((videoId: string) => string) | null = null;
 
+    // the summary line of the Auto-Clip dialog while a run is in progress, null otherwise
+    private clipProgress: HTMLElement | null = null;
+
     private onVideo: (videoId: string) => void = () => {};
     private onFavorite: (videoId: string) => Promise<boolean | null> = () => Promise.resolve(null);
     private onRename: (videoId: string) => void = () => {};
     private onDelete: (videoId: string) => void = () => {};
+    private onAutoClip: (videoId: string) => void = () => {};
 
     constructor() {
         this.modal = document.querySelector<HTMLDivElement>("#modal")!;
@@ -182,6 +218,7 @@ export default class UI {
         onFavorite: (videoId: string) => Promise<boolean | null>,
         onRename: (videoId: string) => void,
         onDelete: (videoId: string) => void,
+        onAutoClip: (videoId: string) => void,
     ) => {
         this.recordingsSizeGb = recordingsSizeGb;
         this.recordings = recordings;
@@ -189,6 +226,7 @@ export default class UI {
         this.onFavorite = onFavorite;
         this.onRename = onRename;
         this.onDelete = onDelete;
+        this.onAutoClip = onAutoClip;
         this.render();
     };
 
@@ -206,7 +244,8 @@ export default class UI {
 
     private matchesTab = (recording: Recording, tab: FilterTab): boolean => {
         if (tab === "favorites") return isFavorite(recording.metadata);
-        if (tab === "ranked") return isRanked(recording.metadata);
+        if (tab === "clips") return isClip(recording.videoId);
+        if (tab === "full-game") return !isClip(recording.videoId);
         return true;
     };
 
@@ -217,7 +256,7 @@ export default class UI {
         for (const tab of this.filterTabs) {
             const key = (tab.dataset.tab as FilterTab) ?? "all";
             const count = searched.filter((r) => this.matchesTab(r, key)).length;
-            tab.textContent = `${key.toUpperCase()} ${count}`;
+            tab.textContent = `${TAB_LABEL[key]} ${count}`;
             tab.setAttribute("aria-selected", String(key === this.filterTab));
         }
 
@@ -259,6 +298,14 @@ export default class UI {
             });
         });
 
+        // a clip has no clips of its own, and a recording without match data has no events to cut on
+        const clippable = !isClip(recording.videoId) && recording.metadata !== null && "Metadata" in recording.metadata;
+        const clipBtn = el("button", { class: "auto-clip", title: "Auto-Clip" }, [SCISSORS]);
+        clipBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            this.onAutoClip(recording.videoId);
+        });
+
         const renameBtn = el("button", { class: "rename", title: "Rename" }, [PENCIL]);
         renameBtn.addEventListener("click", (e) => {
             e.stopPropagation();
@@ -271,7 +318,12 @@ export default class UI {
             this.onDelete(recording.videoId);
         });
 
-        return el("div", { class: "lr-row__actions" }, [favoriteBtn, renameBtn, deleteBtn]);
+        return el("div", { class: "lr-row__actions" }, [
+            favoriteBtn,
+            ...(clippable ? [clipBtn] : []),
+            renameBtn,
+            deleteBtn,
+        ]);
     };
 
     private createRow = (recording: Recording): HTMLLIElement => {
@@ -559,6 +611,114 @@ export default class UI {
         );
     };
 
+    public showAutoClipModal = (
+        videoId: string,
+        plan: (selection: ClipSelection) => Promise<Result<Array<ClipPlan>, string>>,
+        create: (selection: ClipSelection) => Promise<Result<Array<string>, string>>,
+    ) => {
+        const selection: ClipSelection = {
+            kill: true,
+            death: true,
+            assist: true,
+            structure: true,
+            dragon: true,
+            herald: true,
+            baron: true,
+        };
+
+        const summary = el("div", { class: "lr-clip-summary" }, ["…"]);
+        const createBtn = el("button", { class: "lr-btn lr-btn--primary", disabled: "true" }, ["CREATE CLIPS"]);
+        const cancelBtn = el("button", { class: "lr-btn" }, ["CANCEL"]);
+        cancelBtn.addEventListener("click", this.hideModal);
+
+        // every toggle re-plans; only the newest answer is allowed to write to the dialog
+        let pending = 0;
+        const refresh = () => {
+            const request = ++pending;
+            summary.textContent = "…";
+            createBtn.setAttribute("disabled", "true");
+
+            // eslint-disable-next-line always-return
+            plan(selection).then((result) => {
+                if (request !== pending) return;
+
+                if (result.status === "error") {
+                    summary.textContent = result.error.toUpperCase();
+                    return;
+                }
+
+                const clips = result.data;
+                const total = clips.reduce((sum, clip) => sum + (clip.end - clip.start), 0);
+                summary.textContent = `${clips.length} CLIPS${DOT}${formatDuration(total)} TOTAL`;
+                if (clips.length > 0) createBtn.removeAttribute("disabled");
+            });
+        };
+
+        const checkboxes = CLIP_CATEGORIES.map(({ key, name, token }) => {
+            const checkbox = el("input", { type: "checkbox", id: `clip-${key}` });
+            checkbox.checked = selection[key];
+            checkbox.addEventListener("change", () => {
+                selection[key] = checkbox.checked;
+                refresh();
+            });
+
+            return el("label", { class: "legend-item" }, [
+                checkbox,
+                el("span", { class: "legend-swatch", style: `color: var(${token})` }),
+                el("span", { class: "legend-name" }, [name]),
+            ]);
+        });
+
+        createBtn.addEventListener("click", () => {
+            createBtn.setAttribute("disabled", "true");
+            cancelBtn.setAttribute("disabled", "true");
+            for (const checkbox of checkboxes) {
+                checkbox.querySelector("input")?.setAttribute("disabled", "true");
+            }
+
+            this.clipProgress = summary;
+            summary.textContent = "CLIPPING…";
+
+            // eslint-disable-next-line always-return
+            create(selection).then((result) => {
+                this.clipProgress = null;
+                if (result.status === "error") {
+                    this.showErrorModal(`Auto-Clip failed: ${result.error}`);
+                } else {
+                    this.hideModal();
+                    this.setFilterTab("clips");
+                }
+            });
+        });
+
+        this.showModal(
+            this.dialog("AUTO-CLIP", [
+                el("p", { class: "lr-dialog__prose" }, [
+                    "Cut a clip around every selected event in ",
+                    el("span", { class: "em" }, [toVideoName(videoId)]),
+                    `. Each clip keeps ${CLIP_LEAD_IN}s before and ${CLIP_LEAD_OUT}s after the event; events closer together than that end up in one clip.`,
+                ]),
+                el("div", { class: "lr-clip-categories" }, checkboxes),
+                summary,
+                el("div", { class: "lr-dialog__actions" }, [cancelBtn, createBtn]),
+            ]),
+        );
+
+        refresh();
+    };
+
+    /// called for every finished clip while an Auto-Clip run is in progress
+    public setClipProgress = (done: number, total: number) => {
+        if (this.clipProgress !== null) {
+            this.clipProgress.textContent = `CLIPPING${DOT}${done}/${total}`;
+        }
+    };
+
+    public setFilterTab = (tab: FilterTab) => {
+        this.filterTab = tab;
+        this.render();
+    };
+
     public showTimelineModal = (timelineEvents: Array<TimelineEvent>, setTime: (millis: number) => void) => {
         const items = timelineEvents.map((event) => {
             const item = el("li", { style: `color: var(${MARKER_TOKEN[event.markerClass] ?? "--text-2"})` }, [
@@ -624,6 +784,13 @@ export default class UI {
     public showMarkerFlags = (show: boolean) => {
         this.markerLists.classList.toggle("disabled", !show);
     };
+}
+
+// MM:SS for a duration in seconds - clip lengths never reach an hour
+export function formatDuration(seconds: number): string {
+    const minutes = Math.floor(seconds / 60);
+    const rest = Math.floor(seconds % 60);
+    return `${minutes.toString().padStart(2, "0")}:${rest.toString().padStart(2, "0")}`;
 }
 
 export function formatTimestamp(timestamp: number): string {

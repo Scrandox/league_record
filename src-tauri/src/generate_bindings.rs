@@ -17,7 +17,9 @@ fn generate_bindings() -> anyhow::Result<()> {
             commands::get_metadata,
             commands::toggle_favorite,
             commands::confirm_delete,
-            commands::disable_confirm_delete
+            commands::disable_confirm_delete,
+            commands::plan_clips,
+            commands::create_clips
         ])
         .events(collect_events![AppEvent])
         .export(

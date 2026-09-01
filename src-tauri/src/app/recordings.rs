@@ -10,6 +10,12 @@ use crate::util;
 pub trait RecordingManager {
     fn get_recordings(&self) -> Vec<PathBuf>;
 
+    /// clips created by Auto-Clip, in `<recordings>/Clips`
+    ///
+    /// deliberately not part of `get_recordings` - clips are curated by hand, so the
+    /// age/size cleanups that run over recordings must never touch them
+    fn get_clips(&self) -> Vec<PathBuf>;
+
     fn cleanup_recordings(&self);
     fn cleanup_recordings_by_size(&self);
     fn cleanup_recordings_by_age(&self);
@@ -39,6 +45,21 @@ impl RecordingManager for AppHandle {
             }
         }
         recordings
+    }
+
+    fn get_clips(&self) -> Vec<PathBuf> {
+        let mut clips = Vec::<PathBuf>::new();
+        let Ok(read_dir) = crate::app::clips_dir(self).read_dir() else {
+            return vec![];
+        };
+
+        for entry in read_dir.flatten() {
+            let path = entry.path();
+            if path.is_file() && path.extension().is_some_and(|ext| ext == "mp4") {
+                clips.push(path);
+            }
+        }
+        clips
     }
 
     fn cleanup_recordings(&self) {
