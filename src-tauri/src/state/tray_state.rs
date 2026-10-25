@@ -3,7 +3,6 @@ use std::sync::atomic::{AtomicBool, Ordering};
 #[derive(Debug, Default)]
 pub struct TrayState {
     update_available: AtomicBool,
-    recording: AtomicBool,
 }
 
 impl TrayState {
@@ -13,13 +12,5 @@ impl TrayState {
 
     pub fn update_available(&self) -> bool {
         self.update_available.load(Ordering::Acquire)
-    }
-
-    pub fn set_recording(&self, recording: bool) {
-        self.recording.store(recording, Ordering::Release);
-    }
-
-    pub fn recording(&self) -> bool {
-        self.recording.load(Ordering::Acquire)
     }
 }

@@ -27,6 +27,18 @@ impl MetadataFile {
             MetadataFile::NoData(no_data) => no_data.favorite = favorite,
         };
     }
+
+    /// Replaces this file's contents with freshly collected game data while keeping everything
+    /// the user may have changed in the meantime (favorite flag, highlights).
+    pub fn upgrade(self, mut game_metadata: GameMetadata) -> MetadataFile {
+        game_metadata.favorite = self.is_favorite();
+        match self {
+            MetadataFile::Metadata(old) => game_metadata.highlights = old.highlights,
+            MetadataFile::Deferred(old) => game_metadata.highlights = old.highlights,
+            MetadataFile::NoData(_) => {}
+        }
+        MetadataFile::Metadata(game_metadata)
+    }
 }
 
 #[cfg_attr(test, derive(specta::Type))]

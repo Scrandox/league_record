@@ -9,4 +9,4 @@ mod window;
 
 pub use data::*;
 pub use league_recorder::LeagueRecorder;
-pub use metadata::process_data;
+pub use metadata::{resolve_deferred, Retry};

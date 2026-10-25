@@ -1,18 +1,19 @@
-use tauri::menu::{Menu, MenuBuilder, MenuEvent, MenuItemBuilder};
+use tauri::menu::{CheckMenuItemBuilder, Menu, MenuBuilder, MenuEvent, MenuItemBuilder};
 use tauri::tray::{MouseButton, TrayIcon, TrayIconBuilder, TrayIconEvent};
 use tauri::{async_runtime, AppHandle, Manager, Wry};
 
 use super::{AppManager, AppWindow, WindowManager};
 use crate::constants::{self, menu_item, EXIT_SUCCESS};
 use crate::recorder::LeagueRecorder;
-use crate::state::{SettingsWrapper, Shutdown, TrayState};
+use crate::state::{RecordingStatus, Shutdown, TrayState};
 
 pub trait SystemTrayManager {
     fn init_tray_menu(&self);
 
     fn set_tray_menu_update_available(&self, update_button: bool);
 
-    fn set_tray_menu_recording(&self, recording: bool);
+    /// Rebuilds the tray menu from the current app state.
+    fn refresh_tray_menu(&self);
 }
 
 fn handle_system_tray_event(tray_icon: &TrayIcon, event: TrayIconEvent) {
@@ -24,7 +25,7 @@ fn handle_system_tray_event(tray_icon: &TrayIcon, event: TrayIconEvent) {
 
 fn handle_system_tray_menu_event(app_handle: &AppHandle, event: MenuEvent) {
     match event.id().as_ref() {
-        menu_item::SETTINGS => SettingsWrapper::let_user_edit_settings(app_handle),
+        menu_item::SETTINGS => app_handle.edit_settings(),
         menu_item::OPEN => app_handle.open_window(AppWindow::Main),
         menu_item::QUIT => {
             app_handle
@@ -64,17 +65,11 @@ impl SystemTrayManager for AppHandle {
 
     fn set_tray_menu_update_available(&self, update_available: bool) {
         self.state::<TrayState>().set_update_available(update_available);
-
-        // .unwrap on everything because creating the tray-icon is always the same and should never fail
-        self.tray_by_id(constants::TRAY_ID)
-            .unwrap()
-            .set_menu(Some(create_tray_menu(self)))
-            .unwrap();
+        self.refresh_tray_menu();
     }
 
-    fn set_tray_menu_recording(&self, recording: bool) {
-        self.state::<TrayState>().set_recording(recording);
-
+    fn refresh_tray_menu(&self) {
+        // .unwrap on everything because creating the tray-icon is always the same and should never fail
         self.tray_by_id(constants::TRAY_ID)
             .unwrap()
             .set_menu(Some(create_tray_menu(self)))
@@ -83,10 +78,15 @@ impl SystemTrayManager for AppHandle {
 }
 
 fn create_tray_menu(app_handle: &AppHandle) -> Menu<Wry> {
-    let tray_state = app_handle.state::<TrayState>();
-    let recording = tray_state.recording();
-    let update_available = tray_state.update_available();
+    let recording = app_handle.state::<RecordingStatus>().current().is_some();
+    let update_available = app_handle.state::<TrayState>().update_available();
 
+    // build the check item in its final state - toggling it after the menu is built doesn't redraw it
+    let recording_item = CheckMenuItemBuilder::with_id(menu_item::RECORDING, "Recording")
+        .checked(recording)
+        .enabled(false)
+        .build(app_handle)
+        .unwrap();
     let settings = MenuItemBuilder::new("Settings")
         .id(menu_item::SETTINGS)
         .build(app_handle)
@@ -106,7 +106,7 @@ fn create_tray_menu(app_handle: &AppHandle) -> Menu<Wry> {
 
     let tray_menu = if update_available {
         MenuBuilder::new(app_handle)
-            .check(menu_item::RECORDING, "Recording")
+            .item(&recording_item)
             .separator()
             .item(&settings)
             .item(&open)
@@ -115,7 +115,7 @@ fn create_tray_menu(app_handle: &AppHandle) -> Menu<Wry> {
             .item(&update)
     } else {
         MenuBuilder::new(app_handle)
-            .check(menu_item::RECORDING, "Recording")
+            .item(&recording_item)
             .separator()
             .item(&settings)
             .item(&open)
@@ -123,14 +123,6 @@ fn create_tray_menu(app_handle: &AppHandle) -> Menu<Wry> {
     }
     .build()
     .unwrap();
-
-    let recording_item = tray_menu.get(menu_item::RECORDING).unwrap();
-    recording_item
-        .as_check_menuitem()
-        .unwrap()
-        .set_checked(recording)
-        .unwrap();
-    recording_item.as_check_menuitem().unwrap().set_enabled(false).unwrap();
 
     tray_menu
 }
