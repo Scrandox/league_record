@@ -6,6 +6,7 @@ use notify::{EventKind, Watcher};
 use tauri::{AppHandle, Manager};
 
 use crate::app::{AppEvent, EventManager};
+use crate::library::RecordingLibrary;
 use crate::state::{FileWatcher, RecordingStatus};
 
 /// Which app events a filesystem event in the recordings folder translates to.
@@ -35,7 +36,9 @@ pub fn classify(kind: &EventKind, paths: &[PathBuf], exclude: Option<&Path>) -> 
         match path.extension().and_then(OsStr::to_str) {
             Some("mp4") => outcome.recordings_changed = true,
             Some("json") => {
-                if let Some(video_id) = path.file_name().and_then(OsStr::to_str) {
+                // the UI identifies recordings by video id, not by sidecar name
+                let video_path = path.with_extension("mp4");
+                if let Some(video_id) = video_path.file_name().and_then(OsStr::to_str) {
                     outcome.metadata_changed.push(video_id.to_owned());
                 }
             }
@@ -46,13 +49,54 @@ pub fn classify(kind: &EventKind, paths: &[PathBuf], exclude: Option<&Path>) -> 
     outcome
 }
 
+/// Pairs up the halves of a video rename (`old.mp4` -> `new.mp4`). Windows reports a rename as a
+/// `From` event followed by a `To` event, so the `From` path is kept in `pending` until then.
+pub fn video_rename(kind: &EventKind, paths: &[PathBuf], pending: &mut Option<PathBuf>) -> Option<(PathBuf, PathBuf)> {
+    let pair = match kind {
+        EventKind::Modify(ModifyKind::Name(RenameMode::From)) => {
+            *pending = paths.first().cloned();
+            return None;
+        }
+        EventKind::Modify(ModifyKind::Name(RenameMode::To)) => pending.take().zip(paths.first().cloned()),
+        EventKind::Modify(ModifyKind::Name(RenameMode::Both)) => {
+            pending.take();
+            paths.first().cloned().zip(paths.get(1).cloned())
+        }
+        _ => {
+            pending.take();
+            None
+        }
+    };
+
+    let is_mp4 = |path: &PathBuf| path.extension().and_then(OsStr::to_str) == Some("mp4");
+    pair.filter(|(from, to)| is_mp4(from) && is_mp4(to))
+}
+
 pub fn replace(app_handle: &AppHandle, recordings_path: &Path) {
     let watcher = notify::recommended_watcher({
         let app_handle = app_handle.clone();
+        let mut pending_rename = None;
         move |res: notify::Result<notify::Event>| {
             let Ok(event) = res else { return };
 
             let currently_recording = app_handle.state::<RecordingStatus>().current();
+
+            // a video renamed outside the app takes its sidecar along, before the UI re-reads the list
+            // and would create an empty sidecar for the new name
+            if let Some((from, to)) = video_rename(&event.kind, &event.paths, &mut pending_rename) {
+                let new_video_id = to.file_name().and_then(OsStr::to_str);
+                if let (Some((library, video_id)), Some(new_video_id)) = (RecordingLibrary::locate(&from), new_video_id)
+                {
+                    if Some(from.as_path()) != currently_recording.as_deref() {
+                        match library.move_metadata(&video_id, new_video_id) {
+                            Ok(true) => log::info!("moved metadata of {video_id} to {new_video_id}"),
+                            Ok(false) => {}
+                            Err(e) => log::warn!("failed to move metadata of {video_id} to {new_video_id}: {e}"),
+                        }
+                    }
+                }
+            }
+
             let outcome = classify(&event.kind, &event.paths, currently_recording.as_deref());
 
             if outcome.recordings_changed {
@@ -104,9 +148,38 @@ mod tests {
             outcome,
             WatchOutcome {
                 recordings_changed: true,
-                metadata_changed: vec!["a.json".to_owned()],
+                metadata_changed: vec!["a.mp4".to_owned()],
             }
         );
+    }
+
+    #[test]
+    fn rename_halves_are_paired() {
+        let mut pending = None;
+        let from = EventKind::Modify(ModifyKind::Name(RenameMode::From));
+        let to = EventKind::Modify(ModifyKind::Name(RenameMode::To));
+
+        assert_eq!(video_rename(&from, &paths(&["/rec/a.mp4"]), &mut pending), None);
+        assert_eq!(
+            video_rename(&to, &paths(&["/rec/b.mp4"]), &mut pending),
+            Some((PathBuf::from("/rec/a.mp4"), PathBuf::from("/rec/b.mp4")))
+        );
+
+        // a `To` without a preceding `From` and renames of other files are not video renames
+        assert_eq!(video_rename(&to, &paths(&["/rec/c.mp4"]), &mut pending), None);
+        assert_eq!(video_rename(&from, &paths(&["/rec/a.json"]), &mut pending), None);
+        assert_eq!(video_rename(&to, &paths(&["/rec/b.json"]), &mut pending), None);
+    }
+
+    #[test]
+    fn unrelated_event_clears_pending_rename() {
+        let mut pending = None;
+        let from = EventKind::Modify(ModifyKind::Name(RenameMode::From));
+        let to = EventKind::Modify(ModifyKind::Name(RenameMode::To));
+
+        video_rename(&from, &paths(&["/rec/a.mp4"]), &mut pending);
+        video_rename(&EventKind::Create(CreateKind::Any), &paths(&["/rec/x.mp4"]), &mut pending);
+        assert_eq!(video_rename(&to, &paths(&["/rec/b.mp4"]), &mut pending), None);
     }
 
     #[test]

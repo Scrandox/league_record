@@ -177,17 +177,35 @@ impl RecordingLibrary {
             return Ok(false);
         }
 
-        fs::rename(&video_path, &new_video_path).context("failed to rename video")?;
-        if metadata_path.is_file() {
-            if let Err(e) = fs::rename(&metadata_path, &new_metadata_path) {
-                // roll back so video and sidecar never end up with different names
-                if let Err(rollback) = fs::rename(&new_video_path, &video_path) {
-                    log::error!("failed to roll back rename of {}: {rollback}", new_video_path.display());
+        // sidecar first: once the video is renamed the filewatcher moves a sidecar it finds left behind
+        let has_metadata = metadata_path.is_file();
+        if has_metadata {
+            fs::rename(&metadata_path, &new_metadata_path).context("failed to rename metadata file")?;
+        }
+        if let Err(e) = fs::rename(&video_path, &new_video_path) {
+            // roll back so video and sidecar never end up with different names
+            if has_metadata {
+                if let Err(rollback) = fs::rename(&new_metadata_path, &metadata_path) {
+                    log::error!("failed to roll back rename of {}: {rollback}", new_metadata_path.display());
                 }
-                return Err(e).context("failed to rename metadata file");
             }
+            return Err(e).context("failed to rename video");
         }
 
+        Ok(true)
+    }
+
+    /// Moves the sidecar along after the video was renamed outside the app (e.g. in Explorer).
+    /// Never overwrites an existing sidecar. Returns whether anything was moved.
+    pub fn move_metadata(&self, video_id: &str, new_video_id: &str) -> Result<bool> {
+        let metadata_path = Self::metadata_path(&self.video_path(video_id)?);
+        let new_metadata_path = Self::metadata_path(&self.video_path(new_video_id)?);
+
+        if !metadata_path.is_file() || new_metadata_path.exists() {
+            return Ok(false);
+        }
+
+        fs::rename(&metadata_path, &new_metadata_path).context("failed to move metadata file")?;
         Ok(true)
     }
 
@@ -274,6 +292,46 @@ mod tests {
         assert!(validate_video_id("sub/game.mp4").is_err());
         assert!(validate_video_id("sub\\game.mp4").is_err());
         assert!(validate_video_id("..").is_err());
+    }
+
+    fn temp_library(name: &str) -> RecordingLibrary {
+        let root = std::env::temp_dir().join(format!("league_record_test_{name}_{}", std::process::id()));
+        _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&root).unwrap();
+        RecordingLibrary::new(root)
+    }
+
+    #[test]
+    fn move_metadata_follows_renamed_video_without_overwriting() {
+        let library = temp_library("move_metadata");
+        fs::write(library.root.join("new.mp4"), b"").unwrap();
+        fs::write(library.root.join("old.json"), b"{}").unwrap();
+
+        assert!(library.move_metadata("old.mp4", "new.mp4").unwrap());
+        assert!(!library.root.join("old.json").exists());
+        assert!(library.root.join("new.json").is_file());
+
+        // nothing left to move, and an existing sidecar is never replaced
+        fs::write(library.root.join("old.json"), b"{}").unwrap();
+        assert!(!library.move_metadata("old.mp4", "new.mp4").unwrap());
+        assert!(library.root.join("old.json").is_file());
+
+        _ = fs::remove_dir_all(&library.root);
+    }
+
+    #[test]
+    fn rename_moves_video_and_sidecar() {
+        let library = temp_library("rename");
+        fs::write(library.root.join("a.mp4"), b"").unwrap();
+        fs::write(library.root.join("a.json"), b"{}").unwrap();
+
+        assert!(library.rename("a.mp4", "b.mp4").unwrap());
+        assert!(library.root.join("b.mp4").is_file());
+        assert!(library.root.join("b.json").is_file());
+        assert!(!library.root.join("a.mp4").exists());
+        assert!(!library.root.join("a.json").exists());
+
+        _ = fs::remove_dir_all(&library.root);
     }
 
     #[test]
