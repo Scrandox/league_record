@@ -12,10 +12,11 @@ use tokio_util::sync::CancellationToken;
 
 use riot_datatypes::MatchId;
 
-use crate::app::{action, AppEvent, EventManager, RecordingManager, SystemTrayManager};
+use crate::app::{AppEvent, AppManager, EventManager};
 use crate::cancellable;
+use crate::library::RecordingLibrary;
 use crate::recorder::Deferred;
-use crate::state::{CurrentlyRecording, SettingsWrapper};
+use crate::state::SettingsWrapper;
 
 use super::window::{self, WINDOW_CLASS, WINDOW_PROCESS, WINDOW_TITLE};
 use super::MetadataFile;
@@ -65,9 +66,8 @@ impl RecordingTask {
             let shutdown = recorder.shutdown();
             log::info!("stopping recording: stopped={stopped:?}, shutdown={shutdown:?}");
 
+            self.ctx.app_handle.set_recording(None);
             self.ctx.app_handle.cleanup_recordings();
-            self.ctx.app_handle.state::<CurrentlyRecording>().set(None);
-            self.ctx.app_handle.set_tray_menu_recording(false);
             if let Err(e) = self
                 .ctx
                 .app_handle
@@ -97,15 +97,11 @@ impl RecordingTask {
             }
         }
 
-        ctx.app_handle
-            .state::<CurrentlyRecording>()
-            .set(Some(output_filepath.clone()));
-        ctx.app_handle.set_tray_menu_recording(true);
+        ctx.app_handle.set_recording(Some(output_filepath.clone()));
 
         // if initial game_data is successful => start recording
         if let Err(e) = recorder.start_recording() {
-            ctx.app_handle.state::<CurrentlyRecording>().set(None);
-            ctx.app_handle.set_tray_menu_recording(false);
+            ctx.app_handle.set_recording(None);
 
             // if recording start failed stop recording just in case and retry next 'recorder loop
             let stop_recording = recorder.stop_recording();
@@ -127,8 +123,13 @@ impl RecordingTask {
             ingame_time_rec_start_offset,
             highlights: vec![],
         });
-        if let Err(e) = action::save_recording_metadata(&output_filepath, &metadata_file) {
-            log::info!("failed to save MetadataFile: {e}")
+        match RecordingLibrary::locate(&output_filepath) {
+            Some((library, video_id)) => {
+                if let Err(e) = library.write_metadata(&video_id, &metadata_file) {
+                    log::info!("failed to save MetadataFile: {e}")
+                }
+            }
+            None => log::warn!("recording path has no valid video id: {output_filepath:?}"),
         }
 
         let metadata = Metadata {
@@ -141,21 +142,22 @@ impl RecordingTask {
     }
 
     async fn setup_recorder(ctx: &GameCtx) -> Result<(Recorder, PathBuf)> {
-        let settings_state = ctx.app_handle.state::<SettingsWrapper>();
+        // snapshot the settings so the recording isn't affected by edits made while it runs
+        let app_settings = ctx.app_handle.state::<SettingsWrapper>().read().clone();
 
         let window_size = Self::get_window_size().await?;
-        let output_resolution = settings_state
-            .get_output_resolution()
+        let output_resolution = app_settings
+            .output_resolution
             .unwrap_or_else(|| StdResolution::closest_std_resolution(&window_size));
 
         log::info!("Using resolution ({output_resolution:?}) for window ({window_size:?})");
 
-        let mut filename = settings_state.get_filename_format();
+        let mut filename = app_settings.filename_format.clone();
         if !filename.ends_with(".mp4") {
             filename.push_str(".mp4");
         }
-        let filename_path = settings_state
-            .get_recordings_path()
+        let filename_path = app_settings
+            .recordings_folder
             .join(format!("{}", chrono::Local::now().format(&filename)));
 
         let mut settings = RecorderSettings::new(
@@ -164,9 +166,9 @@ impl RecordingTask {
             output_resolution,
             &filename_path,
         );
-        settings.set_framerate(settings_state.get_framerate());
-        settings.set_rate_control(RateControl::CQP(settings_state.get_encoding_quality()));
-        settings.set_audio_source(settings_state.get_audio_source());
+        settings.set_framerate(app_settings.framerate);
+        settings.set_rate_control(RateControl::CQP(app_settings.encoding_quality));
+        settings.set_audio_source(app_settings.record_audio);
 
         let mut recorder = Recorder::new_with_paths(
             ctx.app_handle

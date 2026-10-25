@@ -4,7 +4,7 @@
   "app": {
     "security": {
       "assetProtocol": {
-        "scope": ["**/*.json", "**/*.mp4"],
+        "scope": [],
         "enable": true
       }
     }

@@ -8,13 +8,14 @@ mod commands;
 mod constants;
 mod filewatcher;
 mod generate_bindings;
+mod library;
 mod recorder;
 mod state;
 mod util;
 
 fn main() {
     use app::{AppManager, AppWindow, WindowManager};
-    use state::{CurrentlyRecording, Shutdown, TrayState, WindowState};
+    use state::{FileWatcher, RecordingStatus, Shutdown, TrayState, WindowState};
     use tauri::Manager;
 
     #[cfg(feature = "tokio-console")]
@@ -32,7 +33,8 @@ fn main() {
         }))
         .plugin(tauri_plugin_dialog::init())
         .manage(WindowState::default())
-        .manage(CurrentlyRecording::default())
+        .manage(RecordingStatus::default())
+        .manage(FileWatcher::default())
         .manage(TrayState::default())
         .manage(windows_key_listener::KeyListener::new())
         .manage(Shutdown::default())

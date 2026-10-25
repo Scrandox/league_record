@@ -1,12 +1,10 @@
 mod event;
 mod manager;
-mod recordings;
 mod system_tray;
 mod window;
 
 pub use event::{AppEvent, EventManager};
 pub use manager::AppManager;
-pub use recordings::{action, RecordingManager};
 pub use system_tray::SystemTrayManager;
 pub use window::{AppWindow, WindowManager};
 

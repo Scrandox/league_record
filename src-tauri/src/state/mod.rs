@@ -1,12 +1,12 @@
-mod currently_recording;
 mod filewatcher;
+mod recording_status;
 mod settings;
 mod shutdown;
 mod tray_state;
 mod window_state;
 
-pub use currently_recording::*;
 pub use filewatcher::*;
+pub use recording_status::*;
 pub use settings::*;
 pub use shutdown::*;
 pub use tray_state::*;

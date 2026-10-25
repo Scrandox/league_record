@@ -22,7 +22,7 @@ fn generate_bindings() -> anyhow::Result<()> {
         .events(collect_events![AppEvent])
         .export(
             Typescript::new().bigint(specta_typescript::BigIntExportBehavior::Number),
-            "../src/bindings.ts",
+            "../src/ts/bindings.ts",
         )?;
 
     Ok(())

@@ -127,7 +127,8 @@ async function main() {
         player.one("canplay", ui.showWindow);
     } else {
         void setVideo(null);
-        player.one("ready", ui.showWindow);
+        // 'ready' has usually fired already by now; player.ready() also runs the callback in that case
+        player.ready(ui.showWindow);
     }
 }
 
@@ -176,7 +177,7 @@ async function setMetadata(videoId: string) {
         };
         highlightEvents = {
             recordingOffset: data.Metadata.ingameTimeRecStartOffset,
-            events: data.Metadata.highlights,
+            events: data.Metadata.highlights ?? [],
         };
     } else if (data && "Deferred" in data) {
         ui.showMarkerFlags(false);
@@ -184,7 +185,7 @@ async function setMetadata(videoId: string) {
         currentEvents = null;
         highlightEvents = {
             recordingOffset: data.Deferred.ingameTimeRecStartOffset,
-            events: data.Deferred.highlights,
+            events: data.Deferred.highlights ?? [],
         };
     } else {
         ui.showMarkerFlags(false);

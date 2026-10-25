@@ -1,4 +1,3 @@
-use std::ffi::OsStr;
 use std::fmt::Display;
 
 use anyhow::Result;
@@ -13,10 +12,11 @@ use tauri::{AppHandle, Manager};
 use tokio_util::sync::CancellationToken;
 
 use super::highlight_task::HighlightTask;
-use super::metadata;
+use super::metadata::{self, Retry};
 use super::recording_task::{GameCtx, Metadata, RecordingTask};
-use crate::app::{action, AppEvent, EventManager};
+use crate::app::{AppEvent, EventManager};
 use crate::cancellable;
+use crate::library::RecordingLibrary;
 use crate::recorder::MetadataFile;
 use crate::state::SettingsWrapper;
 
@@ -119,7 +119,7 @@ impl GameListener {
                 SubscriptionResponse::Session(SessionEventData {
                     phase: GamePhase::GameStart | GamePhase::InProgress,
                     game_data: GameData { queue, game_id },
-                }) if queue.is_ranked || !self.ctx.app_handle.state::<SettingsWrapper>().only_record_ranked() => {
+                }) if queue.is_ranked || !self.ctx.app_handle.state::<SettingsWrapper>().read().only_record_ranked => {
                     State::Recording(
                         RecordingTask::new(self.ctx.game_ctx(game_id)),
                         HighlightTask::new(self.ctx.app_handle.clone()),
@@ -144,17 +144,13 @@ impl GameListener {
                     let highlight_data = highlight_task.stop().await;
                     match recording_task.stop().await {
                         Ok(metadata) => {
-                            let mut metadata_filepath = metadata.output_filepath.clone();
-                            metadata_filepath.set_extension("json");
-
-                            if let Ok(MetadataFile::Deferred(mut deferred)) =
-                                action::get_recording_metadata(&metadata_filepath, false)
-                            {
-                                deferred.highlights = highlight_data;
-                                if let Err(e) = action::save_recording_metadata(
-                                    &metadata_filepath,
-                                    &MetadataFile::Deferred(deferred),
-                                ) {
+                            if let Some((library, video_id)) = RecordingLibrary::locate(&metadata.output_filepath) {
+                                let result = library.update_metadata(&video_id, |metadata_file| {
+                                    if let MetadataFile::Deferred(deferred) = metadata_file {
+                                        deferred.highlights = highlight_data;
+                                    }
+                                });
+                                if let Err(e) = result {
                                     log::warn!("failed to write highlight data to deferred metadata file: {e}");
                                 }
                             }
@@ -181,51 +177,27 @@ impl GameListener {
                     log::info!("triggered game-data collection due to msg: {ws_msg:?}");
 
                     // spawn task to handle collecting data so we don't block the recorder for too long
-                    // because game_data::process_data(...) can take up to a minute to finish when re-trying
+                    // because resolving the deferred metadata can take up to a minute to finish when re-trying
                     let ctx = self.ctx.clone();
                     async_runtime::spawn(async move {
-                        let Metadata {
-                            match_id,
-                            output_filepath,
-                            ingame_time_rec_start_offset,
-                        } = metadata;
+                        let Some((library, video_id)) = RecordingLibrary::locate(&metadata.output_filepath) else {
+                            log::error!("recording path has no valid video id: {:?}", metadata.output_filepath);
+                            return;
+                        };
 
-                        let mut metadata_filepath = output_filepath;
-                        let video_id = metadata_filepath.file_name().and_then(OsStr::to_str).map(str::to_owned);
-                        metadata_filepath.set_extension("json");
-
-                        match metadata::process_data_with_retry(
-                            ingame_time_rec_start_offset,
-                            match_id,
-                            &ctx.credentials,
-                            &ctx.cancel_token,
-                        )
-                        .await
+                        let client = LcuRestClient::from(&ctx.credentials);
+                        match metadata::resolve_deferred(&library, &video_id, &client, Retry::GAME_END, &ctx.cancel_token)
+                            .await
                         {
-                            Ok(mut game_metadata) => {
-                                if let Ok(MetadataFile::Deferred(deferred)) =
-                                    action::get_recording_metadata(&metadata_filepath, false)
-                                {
-                                    game_metadata.favorite = deferred.favorite;
-                                    game_metadata.highlights = deferred.highlights;
-                                }
-
-                                let result = action::save_recording_metadata(
-                                    &metadata_filepath,
-                                    &crate::recorder::MetadataFile::Metadata(game_metadata),
-                                );
-                                log::info!("writing game metadata to ({metadata_filepath:?}): {result:?}");
-                            }
+                            Ok(_) => log::info!("game metadata written for {video_id}"),
                             Err(e) => log::error!("unable to process data: {e}"),
                         }
 
-                        if let Some(video_id) = video_id {
-                            if let Err(e) = ctx
-                                .app_handle
-                                .send_event(AppEvent::MetadataChanged { payload: vec![video_id] })
-                            {
-                                log::error!("GameListener failed to send event: {e}");
-                            }
+                        if let Err(e) = ctx
+                            .app_handle
+                            .send_event(AppEvent::MetadataChanged { payload: vec![video_id] })
+                        {
+                            log::error!("GameListener failed to send event: {e}");
                         }
                     });
 
